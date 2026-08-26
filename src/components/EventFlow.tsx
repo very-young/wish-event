@@ -141,8 +141,14 @@ export function EventFlow() {
         provider: "kakao",
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
-          // 닉네임·프로필 이미지만 요청한다. 전화번호·실명은 받지 않는다.
-          scopes: "profile_nickname profile_image",
+          /*
+           * 닉네임만 요청한다 (요구사항 2.4).
+           *
+           * 프로필 사진은 화면에서 쓰지 않으므로 요청하지 않는다.
+           * 친구 목록은 비즈 앱 심사가 필요하고, 공유창은 카카오가
+           * 직접 띄우므로 우리가 친구 목록에 접근할 이유가 없다.
+           */
+          scopes: "profile_nickname",
         },
       });
       if (error) showToast("로그인을 시작할 수 없어요. 다시 시도해 주세요.");
