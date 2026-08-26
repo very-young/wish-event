@@ -97,14 +97,10 @@ export function EventFlow() {
   useEffect(() => {
     const supabase = createClient();
 
-    /*
-     * 이미 로그인된 상태로 다시 방문한 경우를 처리한다.
-     *
-     * 카카오는 한 번 동의하면 다음부터 동의 화면 없이 즉시 되돌려보낸다.
-     * 그래서 사용자 눈에는 "로그인을 눌렀는데 아무 일도 안 일어난다"로
-     * 보인다. 세션이 이미 있으면 버튼을 기다리지 않고 바로 진행시킨다
-     * (요구사항 13.9, 13.10).
-     */
+    // 로그인 콜백 결과를 먼저 읽는다 (요구사항 2.3)
+    const params = new URLSearchParams(window.location.search);
+    const login = params.get("login");
+
     void supabase.auth.getUser().then(({ data }) => {
       if (!data.user) return;
       setSignedIn(true);
@@ -114,13 +110,19 @@ export function EventFlow() {
           (meta.nickname as string) ??
           "달빛 손님",
       );
-      // 이미 참여를 마친 사람은 결과 화면으로 이어준다
-      setShouldResume(true);
-    });
 
-    // 로그인 콜백 결과를 처리한다 (요구사항 2.3)
-    const params = new URLSearchParams(window.location.search);
-    const login = params.get("login");
+      /*
+       * 로그인 콜백으로 온 것이 아니라 이미 로그인된 채로 재방문한 경우다.
+       *
+       * 카카오는 한 번 동의하면 다음부터 동의 화면 없이 즉시 되돌려보내고,
+       * 세션이 남아 있으면 로그인 절차 자체가 생략된다. 그때는 주소창에
+       * login=ok가 붙지 않아서 아무 처리도 일어나지 않았다.
+       * 사용자에게는 "눌렀는데 반응이 없다"로 보였다.
+       *
+       * 참여를 마친 사람은 결과 화면으로 되돌려보낸다 (요구사항 13.9, 13.10).
+       */
+      if (login !== "ok") setShouldResume(true);
+    });
 
     if (login === "cancelled" || login === "failed") {
       // 다음 프레임으로 미뤄 렌더 중 상태 변경을 피한다
@@ -128,6 +130,11 @@ export function EventFlow() {
         () => showToast("로그인이 필요해요. 다시 시도해 주세요."),
         0,
       );
+    }
+
+    if (login === "ok") {
+      // 로그인 직후에는 소원 작성까지 자동으로 이어준다
+      window.setTimeout(() => setJustLoggedIn(true), 0);
     }
 
     if (login) {
