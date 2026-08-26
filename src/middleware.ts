@@ -1,8 +1,14 @@
-import type { NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export async function middleware(request: NextRequest) {
-  return updateSession(request);
+  try {
+    return await updateSession(request);
+  } catch (e) {
+    // 미들웨어 실패로 사이트 전체가 죽는 것을 막는다
+    console.error("[middleware] 처리 실패", e);
+    return NextResponse.next({ request });
+  }
 }
 
 export const config = {

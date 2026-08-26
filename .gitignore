@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Vercel 토큰 (로컬 전용)
+.vercel-token
+.vercel
+.env*
