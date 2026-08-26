@@ -59,6 +59,8 @@ export function EventFlow() {
 
   const [signedIn, setSignedIn] = useState(false);
   const [nickname, setNickname] = useState("");
+  /** 로그인 콜백으로 돌아온 직후인지. 자동으로 다음 화면으로 넘긴다. */
+  const [justLoggedIn, setJustLoggedIn] = useState(false);
 
   const [category, setCategory] = useState<CategoryId | null>(null);
   const [wish, setWish] = useState("");
@@ -101,9 +103,10 @@ export function EventFlow() {
       );
     });
 
-    // 로그인 콜백 결과를 알려준다 (요구사항 2.3)
+    // 로그인 콜백 결과를 처리한다 (요구사항 2.3)
     const params = new URLSearchParams(window.location.search);
     const login = params.get("login");
+
     if (login === "cancelled" || login === "failed") {
       // 다음 프레임으로 미뤄 렌더 중 상태 변경을 피한다
       window.setTimeout(
@@ -111,6 +114,12 @@ export function EventFlow() {
         0,
       );
     }
+
+    if (login === "ok") {
+      // 로그인 성공 후 돌아온 경우 자동으로 다음 화면으로 진행한다
+      window.setTimeout(() => setJustLoggedIn(true), 0);
+    }
+
     if (login) {
       // 주소창을 정리해 새로고침 시 다시 뜨지 않게 한다
       window.history.replaceState({}, "", window.location.pathname);
@@ -128,6 +137,36 @@ export function EventFlow() {
   };
 
   // ---------- 시작 ----------
+
+  /**
+   * 참여 가능 여부를 서버에 확인하고 다음 화면으로 넘긴다.
+   * 로그인 버튼과 로그인 콜백 자동 진행에서 함께 사용한다.
+   */
+  const proceedToCategory = useCallback(async () => {
+    setBusy(true);
+    try {
+      const state = await getPlayState();
+      if (!state.ok) {
+        showToast("상태를 확인할 수 없어요. 다시 시도해 주세요.");
+        return;
+      }
+      if (state.eventStatus !== "open") {
+        showBlocked(state.state, state.eventStatus);
+        return;
+      }
+      if (state.hasWon) {
+        showBlocked("won");
+        return;
+      }
+      if (state.state !== "available" && state.state !== "retry_ready") {
+        showBlocked(state.state);
+        return;
+      }
+      setStep("category");
+    } finally {
+      setBusy(false);
+    }
+  }, [showToast]);
 
   const handleStart = async () => {
     if (busy) return;
@@ -155,30 +194,28 @@ export function EventFlow() {
       return;
     }
 
-    setBusy(true);
-    try {
-      const state = await getPlayState();
-      if (!state.ok) {
-        showToast("상태를 확인할 수 없어요. 다시 시도해 주세요.");
-        return;
-      }
-      if (state.eventStatus !== "open") {
-        showBlocked(state.state, state.eventStatus);
-        return;
-      }
-      if (state.hasWon) {
-        showBlocked("won");
-        return;
-      }
-      if (state.state !== "available" && state.state !== "retry_ready") {
-        showBlocked(state.state);
-        return;
-      }
-      setStep("category");
-    } finally {
-      setBusy(false);
-    }
+    await proceedToCategory();
   };
+
+  /*
+   * 로그인 콜백으로 돌아온 직후에는 버튼을 다시 누르지 않아도
+   * 바로 다음 화면으로 넘긴다.
+   *
+   * 이 처리가 없으면 사용자는 "로그인 눌렀는데 다시 시작 버튼이 뜬다"고
+   * 느껴 오류로 오해한다.
+   */
+  useEffect(() => {
+    if (!justLoggedIn || !signedIn) return;
+
+    // 다음 프레임으로 미뤄 렌더 중 상태 변경을 피한다
+    const t = window.setTimeout(() => {
+      setJustLoggedIn(false);
+      primeAudio();
+      void proceedToCategory();
+    }, 0);
+
+    return () => window.clearTimeout(t);
+  }, [justLoggedIn, signedIn, proceedToCategory]);
 
   // ---------- 소원 제출 후 게임 시작 ----------
 
@@ -348,7 +385,8 @@ export function EventFlow() {
 
       <IntroScreen
         active={step === "intro"}
-        busy={busy}
+        // 로그인 직후 자동 진행 중에도 버튼을 잠가 중복 클릭을 막는다
+        busy={busy || justLoggedIn}
         signedIn={signedIn}
         onStart={handleStart}
         onOpenPrivacy={() => setShowPrivacy(true)}
