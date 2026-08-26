@@ -40,7 +40,12 @@ import {
   type Particle,
   type RenderState,
 } from "./render";
-import type { InputLog, RoundRecord, ShotRecord } from "./replay";
+import {
+  CANONICAL_VIEWPORT,
+  type InputLog,
+  type RoundRecord,
+  type ShotRecord,
+} from "./replay";
 
 /** 라운드 진행 단계 */
 export type Phase =
@@ -93,7 +98,21 @@ export class GameEngine {
   private readonly events: EngineEvents;
   private readonly reducedMotion: boolean;
 
-  private vp: Viewport = { width: 0, height: 0 };
+  /**
+   * 시뮬레이션용 화면 크기. 항상 기준 크기로 고정한다.
+   *
+   * 물리 계산이 화면 크기에 영향을 받으면(중력과 속도가 축별로 정규화되므로)
+   * 같은 조작이 기기마다 다른 궤적을 만든다. 그러면 서버가 재현했을 때
+   * 결과가 달라져 정당한 성공이 거부된다 (설계 결정 D1).
+   *
+   * 가상 좌표계 덕분에 그리기만 실제 크기로 환산하면 되고,
+   * 화면 크기와 무관하게 난이도가 유지된다 (요구사항 14.3).
+   */
+  private readonly vp: Viewport = CANONICAL_VIEWPORT;
+
+  /** 실제 캔버스 크기. 그리기에만 사용한다. */
+  private displayVp: Viewport = { width: 0, height: 0 };
+
   private rafId = 0;
   private lastTime = 0;
   private accumulator = 0;
@@ -139,8 +158,8 @@ export class GameEngine {
 
   // ---------- 수명 주기 ----------
 
-  start(vp: Viewport): void {
-    this.vp = vp;
+  start(displayVp: Viewport): void {
+    this.displayVp = displayVp;
     this.running = true;
     this.beginRound(1);
     this.lastTime = performance.now();
@@ -153,9 +172,15 @@ export class GameEngine {
     cancelAnimationFrame(this.rafId);
   }
 
-  /** 화면 크기가 바뀌었을 때 (요구사항 14.4) */
-  setViewport(vp: Viewport): void {
-    this.vp = vp;
+  /**
+   * 화면 크기가 바뀌었을 때 (요구사항 14.4).
+   *
+   * ⚠️ 시뮬레이션에 쓰는 화면 크기(this.vp)는 바꾸지 않는다.
+   *    물리 계산은 항상 기준 크기로 하고, 그리기만 실제 크기로 한다.
+   *    그러지 않으면 서버 재현 결과와 어긋나 정당한 성공이 거부된다.
+   */
+  setViewport(displayVp: Viewport): void {
+    this.displayVp = displayVp;
   }
 
   getPhase(): Phase {
@@ -389,7 +414,9 @@ export class GameEngine {
   // ---------- 렌더 ----------
 
   private draw(): void {
-    render(this.ctx, this.vp, this.buildRenderState());
+    // 그리기는 실제 캔버스 크기로 한다. 좌표는 가상 좌표계이므로
+    // 어느 크기로 환산해도 화면 비율이 유지된다.
+    render(this.ctx, this.displayVp, this.buildRenderState());
   }
 
   private buildRenderState(): RenderState {

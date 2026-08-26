@@ -288,40 +288,47 @@ export function EventFlow() {
   // ---------- 게임 종료 ----------
 
   const handleGameEnd = useCallback(
-    async (_clientSuccess: boolean, log: InputLog) => {
-      if (!attemptId) {
-        /*
-         * 회차 정보가 없으면 결과를 제출할 수 없다.
-         * 조용히 넘어가면 회차가 in_progress로 영구히 남아 다음 참여가
-         * 막히므로, 사용자에게 알리고 결과 화면으로는 보낸다.
-         */
-        console.error("[game] attemptId 없이 게임이 끝났습니다");
+    async (clientSuccess: boolean, log: InputLog) => {
+      /**
+       * 서버 통신이 실패했을 때의 처리.
+       *
+       * ⚠️ 통신 실패를 게임 실패로 바꿔서는 안 된다.
+       *    라운드 3을 깼는데 네트워크 문제로 실패 화면을 보게 되면
+       *    참여자에게는 명백한 오류다.
+       *
+       * 화면에서는 성공을 인정하되, 경품은 서버가 확정하지 못했으므로
+       * 지급하지 않는다(소진 경로와 동일하게 처리). 저장 실패도 알린다.
+       */
+      const fallbackToClientResult = () => {
         showToast(COMMON.storeFailed);
-        setWon(false);
-        setStep("letter");
+        setWon(clientSuccess);
+        setPrizeSoldOut(clientSuccess); // 경품 확정 불가 → 소진과 같은 안내
+        setSerial(null);
+        setStep(clientSuccess ? "celebrate" : "letter");
+      };
+
+      if (!attemptId) {
+        console.error("[game] attemptId 없이 게임이 끝났습니다");
+        fallbackToClientResult();
         return;
       }
 
       /*
-       * 클라이언트의 성공 주장은 참고하지 않는다.
-       * 서버가 seed로 재현해 판정한 결과만 사용한다 (설계 결정 D1).
+       * 클라이언트의 성공 주장은 경품 지급 근거로 쓰지 않는다.
+       * 서버가 seed로 재현해 판정한 결과만 신뢰한다 (설계 결정 D1).
        */
       let result;
       try {
         result = await submitResult(attemptId, log);
       } catch (e) {
-        console.error("[game] 결과 제출 실패", e);
-        showToast(COMMON.storeFailed);
-        setWon(false);
-        setStep("letter");
+        console.error("[game] 결과 제출 중 오류", e);
+        fallbackToClientResult();
         return;
       }
 
       if (!result.ok) {
         console.error("[game] 결과 제출 거부", result.reason);
-        showToast(COMMON.storeFailed);
-        setWon(false);
-        setStep("letter");
+        fallbackToClientResult();
         return;
       }
 
@@ -337,6 +344,8 @@ export function EventFlow() {
         setStep("celebrate");
       } else {
         setWon(false);
+        setPrizeSoldOut(false);
+        setSerial(null);
         setStep("letter");
       }
     },
