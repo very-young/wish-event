@@ -62,6 +62,13 @@ export function EventFlow() {
   const [nickname, setNickname] = useState("");
   /** 로그인 콜백으로 돌아온 직후인지. 자동으로 다음 화면으로 넘긴다. */
   const [justLoggedIn, setJustLoggedIn] = useState(false);
+  /**
+   * 이미 로그인된 상태로 재방문했는지.
+   *
+   * 참여를 마친 사람만 결과 화면으로 되돌려보낸다.
+   * 아직 기회가 남은 사람은 인트로에 그대로 둔다.
+   */
+  const [shouldResume, setShouldResume] = useState(false);
 
   const [category, setCategory] = useState<CategoryId | null>(null);
   const [wish, setWish] = useState("");
@@ -90,6 +97,14 @@ export function EventFlow() {
   useEffect(() => {
     const supabase = createClient();
 
+    /*
+     * 이미 로그인된 상태로 다시 방문한 경우를 처리한다.
+     *
+     * 카카오는 한 번 동의하면 다음부터 동의 화면 없이 즉시 되돌려보낸다.
+     * 그래서 사용자 눈에는 "로그인을 눌렀는데 아무 일도 안 일어난다"로
+     * 보인다. 세션이 이미 있으면 버튼을 기다리지 않고 바로 진행시킨다
+     * (요구사항 13.9, 13.10).
+     */
     void supabase.auth.getUser().then(({ data }) => {
       if (!data.user) return;
       setSignedIn(true);
@@ -99,6 +114,8 @@ export function EventFlow() {
           (meta.nickname as string) ??
           "달빛 손님",
       );
+      // 이미 참여를 마친 사람은 결과 화면으로 이어준다
+      setShouldResume(true);
     });
 
     // 로그인 콜백 결과를 처리한다 (요구사항 2.3)
@@ -111,11 +128,6 @@ export function EventFlow() {
         () => showToast("로그인이 필요해요. 다시 시도해 주세요."),
         0,
       );
-    }
-
-    if (login === "ok") {
-      // 로그인 성공 후 돌아온 경우 자동으로 다음 화면으로 진행한다
-      window.setTimeout(() => setJustLoggedIn(true), 0);
     }
 
     if (login) {
@@ -244,6 +256,41 @@ export function EventFlow() {
 
     return () => window.clearTimeout(t);
   }, [justLoggedIn, signedIn, proceedToCategory]);
+
+  /*
+   * 이미 로그인된 상태로 다시 들어온 경우, 참여를 마친 사람은
+   * 지난 결과 화면으로 되돌려보낸다.
+   *
+   * 당첨자는 일련번호를 다시 확인해야 하고(요구사항 13.9),
+   * 기회를 다 쓴 사람은 그 화면에서 공유해 재도전을 열어야 한다
+   * (요구사항 12.1). 인트로에 머물면 둘 다 불가능하다.
+   *
+   * 아직 기회가 남은 사람은 건드리지 않는다. 인트로에서 시작해야 한다.
+   */
+  useEffect(() => {
+    if (!shouldResume || !signedIn) return;
+
+    let cancelled = false;
+    void (async () => {
+      const state = await getPlayState();
+      if (cancelled || !state.ok) return;
+      // 이벤트 기간이 아니면 시작 시점에 안내하므로 여기서는 두고 본다
+      if (state.eventStatus !== "open") return;
+      // 아직 참여할 수 있으면 인트로에 머문다
+      if (
+        !state.hasWon &&
+        (state.state === "available" || state.state === "retry_ready")
+      ) {
+        return;
+      }
+      await showLastResult();
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // shouldResume은 한 번 켜지면 다시 꺼지지 않으므로 이 효과는 한 번만 돈다
+  }, [shouldResume, signedIn, showLastResult]);
 
   // ---------- 소원 제출 후 게임 시작 ----------
 

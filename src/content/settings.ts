@@ -44,9 +44,12 @@ export const SHARE_POLL_INTERVAL_MS = 3_000;
 
 /**
  * 당첨자 확인용 네이버폼 링크.
- * TODO: 추후 제공. 빈 값이면 버튼을 숨긴다 (요구사항 10.5).
+ *
+ * 환경 변수로 넣으면 코드 수정 없이 교체할 수 있다.
+ * 비어 있으면 버튼이 눌리지 않는 상태로 표시된다 (요구사항 10.5).
  */
-export const WINNER_FORM_URL = "";
+export const WINNER_FORM_URL =
+  process.env.NEXT_PUBLIC_WINNER_FORM_URL ?? "";
 
 /**
  * 공유 카드 대표 이미지 절대 주소.
