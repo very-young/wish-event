@@ -289,15 +289,36 @@ export function EventFlow() {
 
   const handleGameEnd = useCallback(
     async (_clientSuccess: boolean, log: InputLog) => {
-      if (!attemptId) return;
+      if (!attemptId) {
+        /*
+         * 회차 정보가 없으면 결과를 제출할 수 없다.
+         * 조용히 넘어가면 회차가 in_progress로 영구히 남아 다음 참여가
+         * 막히므로, 사용자에게 알리고 결과 화면으로는 보낸다.
+         */
+        console.error("[game] attemptId 없이 게임이 끝났습니다");
+        showToast(COMMON.storeFailed);
+        setWon(false);
+        setStep("letter");
+        return;
+      }
 
       /*
        * 클라이언트의 성공 주장은 참고하지 않는다.
        * 서버가 seed로 재현해 판정한 결과만 사용한다 (설계 결정 D1).
        */
-      const result = await submitResult(attemptId, log);
+      let result;
+      try {
+        result = await submitResult(attemptId, log);
+      } catch (e) {
+        console.error("[game] 결과 제출 실패", e);
+        showToast(COMMON.storeFailed);
+        setWon(false);
+        setStep("letter");
+        return;
+      }
 
       if (!result.ok) {
+        console.error("[game] 결과 제출 거부", result.reason);
         showToast(COMMON.storeFailed);
         setWon(false);
         setStep("letter");
