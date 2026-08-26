@@ -71,6 +71,78 @@ export async function getPlayState(): Promise<PlayStateResult> {
 }
 
 // ============================================================
+// 마지막 회차 조회 (재접속 시 결과 재열람)
+// ============================================================
+
+export interface LastAttemptInfo {
+  attemptId: string;
+  category: string | null;
+  wishText: string | null;
+  status: string;
+  reachedRound: number;
+  places: unknown;
+  /** 당첨 일련번호. 당첨자만 값이 있다. */
+  serial: string | null;
+}
+
+export type LastAttemptResult =
+  | { ok: true; attempt: LastAttemptInfo | null }
+  | { ok: false; reason: "unauthenticated" | "error" };
+
+/**
+ * 가장 최근에 끝난 회차를 가져온다.
+ *
+ * 기회를 다 쓴 참여자가 재접속했을 때 결과 화면을 다시 보여주고,
+ * 거기서 공유해 재도전을 열 수 있게 하기 위해 필요하다 (요구사항 13.10).
+ */
+export async function getLastAttempt(): Promise<LastAttemptResult> {
+  const userId = await currentUserId();
+  if (!userId) return { ok: false, reason: "unauthenticated" };
+
+  try {
+    const admin = createAdminClient();
+
+    const { data, error } = await admin
+      .from("attempts")
+      .select("id, category, wish_text, status, reached_round, places_shown")
+      .eq("participant_id", userId)
+      .neq("status", "in_progress")
+      .order("started_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) return { ok: false, reason: "error" };
+    if (!data) return { ok: true, attempt: null };
+
+    // 당첨자면 일련번호도 함께 가져온다
+    let serial: string | null = null;
+    if (data.status === "success") {
+      const { data: win } = await admin
+        .from("winners")
+        .select("serial")
+        .eq("participant_id", userId)
+        .maybeSingle();
+      serial = win?.serial ?? null;
+    }
+
+    return {
+      ok: true,
+      attempt: {
+        attemptId: data.id as string,
+        category: (data.category as string | null) ?? null,
+        wishText: (data.wish_text as string | null) ?? null,
+        status: data.status as string,
+        reachedRound: (data.reached_round as number) ?? 1,
+        places: data.places_shown,
+        serial,
+      },
+    };
+  } catch {
+    return { ok: false, reason: "error" };
+  }
+}
+
+// ============================================================
 // 참여 시작
 // ============================================================
 

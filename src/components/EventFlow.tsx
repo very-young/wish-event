@@ -29,6 +29,7 @@ import { primeAudio } from "@/lib/sfx";
 import { loadKakao, shareForRetry, shareInvite } from "@/lib/kakao";
 import { createClient } from "@/lib/supabase/client";
 import {
+  getLastAttempt,
   getPlayState,
   issueShareTicket,
   startAttempt,
@@ -72,11 +73,8 @@ export function EventFlow() {
   const [won, setWon] = useState(false);
   const [prizeSoldOut, setPrizeSoldOut] = useState(false);
   const [serial, setSerial] = useState<string | null>(null);
-  /**
-   * 서버가 확정한 추천 명소.
-   * TODO: submitResult 응답에 places를 포함시켜 채운다. 지금은 유형 기본값을 쓴다.
-   */
-  const [places] = useState<readonly Place[] | undefined>();
+  /** 서버가 확정한 추천 명소. 재열람 시 같은 명소를 보여주기 위해 사용한다. */
+  const [places, setPlaces] = useState<readonly Place[] | undefined>();
 
   const [waitingShare, setWaitingShare] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -142,6 +140,29 @@ export function EventFlow() {
    * 참여 가능 여부를 서버에 확인하고 다음 화면으로 넘긴다.
    * 로그인 버튼과 로그인 콜백 자동 진행에서 함께 사용한다.
    */
+  /**
+   * 지난 회차 결과를 불러와 결과 화면으로 보낸다.
+   *
+   * 기회를 다 쓴 참여자에게 막다른 안내만 보여주면 공유로 재도전을
+   * 열 방법이 없다. 결과 화면을 다시 보여줘야 거기서 공유할 수 있다.
+   */
+  const showLastResult = useCallback(async (): Promise<boolean> => {
+    const last = await getLastAttempt();
+    if (!last.ok || !last.attempt) return false;
+
+    const a = last.attempt;
+    setAttemptId(a.attemptId);
+    if (a.category) setCategory(a.category as CategoryId);
+    if (a.wishText) setWish(a.wishText);
+    setWon(a.status === "success");
+    // 성공했는데 일련번호가 없으면 경품 소진으로 성공한 경우다
+    setPrizeSoldOut(a.status === "success" && !a.serial);
+    setSerial(a.serial);
+    if (Array.isArray(a.places)) setPlaces(a.places as Place[]);
+    setStep("letter");
+    return true;
+  }, []);
+
   const proceedToCategory = useCallback(async () => {
     setBusy(true);
     try {
@@ -155,18 +176,25 @@ export function EventFlow() {
         return;
       }
       if (state.hasWon) {
-        showBlocked("won");
+        // 당첨자는 결과와 일련번호를 다시 볼 수 있어야 한다 (요구사항 13.9)
+        const shown = await showLastResult();
+        if (!shown) showBlocked("won");
         return;
       }
       if (state.state !== "available" && state.state !== "retry_ready") {
-        showBlocked(state.state);
+        /*
+         * 기회를 다 쓴 상태라면 지난 결과를 보여준다.
+         * 그 화면에서 공유해 재도전을 열 수 있다 (요구사항 12.1).
+         */
+        const shown = await showLastResult();
+        if (!shown) showBlocked(state.state);
         return;
       }
       setStep("category");
     } finally {
       setBusy(false);
     }
-  }, [showToast]);
+  }, [showToast, showLastResult]);
 
   const handleStart = async () => {
     if (busy) return;
@@ -333,21 +361,34 @@ export function EventFlow() {
   const handleShareGranted = useCallback(() => {
     setWaitingShare(false);
     showToast(RETRY_SHARE.granted);
-    // 재도전은 소원을 유지하고 발사부터 시작한다 (요구사항 12.19)
+
+    /*
+     * 재도전은 소원 유형과 문구를 유지하고 접기 단계를 건너뛰어
+     * 발사 화면부터 시작한다 (요구사항 12.19).
+     * 이미 접은 비행기를 다시 접게 하면 지루해진다.
+     */
     void (async () => {
       const start = await startAttempt();
       if (!start.ok) {
         showToast("재도전을 시작할 수 없어요.");
         return;
       }
+
+      // 새 회차에도 소원을 다시 저장한다.
+      // 회차마다 소원이 기록되어야 결과 화면에서 명소를 보여줄 수 있다.
+      if (category) {
+        await submitWish(start.attemptId, category, wish);
+      }
+
       setAttemptId(start.attemptId);
       setSeeds(start.roundSeeds);
       setGameKey((k) => k + 1);
       setWon(false);
       setSerial(null);
+      setPrizeSoldOut(false);
       setStep("game");
     })();
-  }, [showToast]);
+  }, [showToast, category, wish]);
 
   const handleShareCancel = useCallback(
     (reason: "timeout" | "closed") => {
