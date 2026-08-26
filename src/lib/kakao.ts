@@ -14,9 +14,17 @@
 import { INVITE_SHARE, RETRY_SHARE_CARD } from "@/content/copy";
 import { SHARE_IMAGE_URL, SITE_URL } from "@/content/settings";
 
-const SDK_URL = "https://t1.kakao.com/kakao_js_sdk/2.7.5/kakao.min.js";
+/**
+ * 카카오 JS SDK.
+ *
+ * 도메인은 t1.kakaocdn.net 이다 (t1.kakao.com은 존재하지 않는다).
+ * integrity 값은 실제 배포 파일에서 계산한 값이며, 버전을 올릴 때
+ * 반드시 새로 계산해야 한다. 값이 틀리면 브라우저가 스크립트를 차단한다.
+ */
+const SDK_VERSION = "2.7.5";
+const SDK_URL = `https://t1.kakaocdn.net/kakao_js_sdk/${SDK_VERSION}/kakao.min.js`;
 const SDK_INTEGRITY =
-  "sha384-kYPsUbBPlktXsY6/oNHSUDZoTX6+YI51f63jCPEIPFP09ttByAdxd2mEjKuhdqn4";
+  "sha384-dok87au0gKqJdxs7msEdBPNnKSRT+/mhTVzq+qOhcL464zXwvcrpjeWvyj1kCdq6";
 
 interface KakaoLink {
   mobileWebUrl: string;
@@ -83,8 +91,12 @@ export function loadKakao(): Promise<KakaoSDK> {
     script.crossOrigin = "anonymous";
     script.async = true;
     script.onload = finish;
-    script.onerror = () =>
+    script.onerror = () => {
+      // 원인을 구분할 수 있게 로그를 남긴다.
+      // 흔한 원인: 잘못된 SDK 주소, integrity 불일치, 네트워크 차단
+      console.error("[kakao] SDK 로드 실패", SDK_URL);
       reject(new Error("카카오 SDK 로드에 실패했습니다"));
+    };
     document.head.appendChild(script);
   });
 

@@ -303,7 +303,9 @@ export function EventFlow() {
       // SDK를 먼저 확인한다. 없으면 티켓을 낭비하지 않는다.
       try {
         await loadKakao();
-      } catch {
+      } catch (e) {
+        // 원인 파악을 위해 콘솔에 남긴다
+        console.error("[share] 카카오 SDK 준비 실패", e);
         showToast(RETRY_SHARE.unavailable);
         return;
       }
