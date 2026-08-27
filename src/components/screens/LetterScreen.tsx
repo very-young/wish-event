@@ -104,7 +104,15 @@ export function LetterScreen({
             </button>
 
             <p className="lead" style={{ textAlign: "center" }}>
-              {(won ? LETTER.arrivedWin : LETTER.arrivedLose)
+              {/*
+                경품을 실제로 받는 사람에게만 선물을 언급한다.
+                소진 시에는 성공했어도 줄 선물이 없다.
+              */}
+              {(prizeWon
+                ? LETTER.arrivedWin
+                : won
+                  ? LETTER.arrivedSuccess
+                  : LETTER.arrivedLose)
                 .split("\n")
                 .map((line, i) => (
                   <span key={i}>
