@@ -144,19 +144,11 @@ as $$
 $$;
 
 /*
- * 시험 중에 생긴 옛 형식 당첨 기록(CHU-...)을 정리한다.
+ * 옛 형식 당첨 기록(CHU-...)은 여기서 건드리지 않는다.
  *
- * 이 번호들은 풀에 없어서 현황 조회에 잡히지 않고, 재고 계산도 어긋난다.
- * 실제 참여자에게 안내한 번호가 아니므로 지운다.
+ * 0009_test_reset.sql의 test_reset_winner()로 언제든 되돌릴 수 있으므로
+ * 마이그레이션이 데이터를 임의로 지우지 않는 편이 안전하다.
  */
-delete from winners where serial like 'CHU-%';
-
-update participants p
-   set state = 'exhausted'::play_state, has_won = false
- where p.has_won = true
-   and not exists (
-     select 1 from winners w where w.participant_id = p.id
-   );
 
 /*
  * 요약. 전체·지급·남은 개수와 다음에 나갈 번호를 한 줄로 보여준다.
