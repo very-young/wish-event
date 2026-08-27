@@ -967,12 +967,20 @@ body {
   letter-spacing: 0.2em;
   color: #a98b3f;
   margin-bottom: 14px;
+  /* 본문을 가운데로 모았으므로 보낸이도 함께 맞춘다 */
+  text-align: center;
 }
 
 .letter-body {
   font-family: var(--font-gowun-batang), serif;
   font-size: 16px;
   line-height: 1.9;
+  /*
+   * 문구에 넣은 줄바꿈을 그대로 살리고 가운데로 모은다.
+   * 한 줄씩 끊어 읽히도록 의미 단위로 줄을 나눠 뒀다.
+   */
+  white-space: pre-line;
+  text-align: center;
 }
 
 .place-list {
