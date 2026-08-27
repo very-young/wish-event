@@ -561,6 +561,15 @@ body {
   color: #fff;
 }
 
+/*
+ * 인트로 제목만 조금 줄인다.
+ * 기본 30px에서는 "달이에요"의 마지막 글자가 혼자 다음 줄로 넘어갔다.
+ * 다른 화면의 제목 크기는 그대로 둔다.
+ */
+.intro-title {
+  font-size: 27px;
+}
+
 .intro-steps {
   list-style: none;
   margin-top: 18px;

@@ -106,7 +106,11 @@ export function ShareWaitOverlay({
         <p className="title-md" style={{ fontSize: 19 }}>
           {RETRY_SHARE.waiting}
         </p>
-        <p className="lead" style={{ marginTop: 10 }}>
+        {/* 줄바꿈이 문구에 포함돼 있으므로 그대로 살려 표시한다 */}
+        <p
+          className="lead"
+          style={{ marginTop: 10, whiteSpace: "pre-line" }}
+        >
           {RETRY_SHARE.waitingSub}
         </p>
 

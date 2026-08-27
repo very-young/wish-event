@@ -11,13 +11,6 @@ export const INTRO = {
   lead: "오늘 밤, 당신의 소원을 종이비행기에 실어\n저에게 날려 보내주세요.",
   startButton: "카카오로 시작하기",
   startButtonSignedIn: "소원 빌러 가기",
-  howToTitle: "참여 방법",
-  howToSteps: [
-    "소원 유형을 골라요",
-    "종이에 소원을 적어요",
-    "종이비행기로 접어요",
-    "달님에게 날려 보내요",
-  ],
   periodLabel: "이벤트 기간",
 } as const;
 
@@ -133,10 +126,9 @@ export const RETRY_SHARE = {
   prompt:
     "아쉽다면, 친구와 함께라면\n달님께 소원을 한 번 더 전할 수 있어요.",
   button: "공유하고 다시 도전",
-  notice:
-    "카카오톡으로 전송이 확인되면 재도전이 열려요.\n이미 보낸 톡방은 재도전이 열리지 않아요.",
-  waiting: "카카오톡에서 친구를 선택해 보내주세요…",
-  waitingSub: "전송이 확인되면 바로 재도전할 수 있어요.",
+  waiting: "카카오톡에서 친구를 선택해 공유해주세요.",
+  waitingSub:
+    "카카오톡으로 전송이 확인되면 재도전이 열려요.\n단, 이미 보낸 톡방과 나와의 채팅은 재도전이 열리지 않아요.",
   granted: "재도전 기회가 열렸어요! 🌙",
   startRetryButton: "다시 도전하기",
   duplicateRoom:

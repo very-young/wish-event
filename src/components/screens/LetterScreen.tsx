@@ -223,14 +223,10 @@ export function LetterScreen({
                   >
                     {RETRY_SHARE.button}
                   </button>
-                  <p className="share-notice">
-                    {RETRY_SHARE.notice.split("\n").map((line, i) => (
-                      <span key={i}>
-                        {line}
-                        {i === 0 && <br />}
-                      </span>
-                    ))}
-                  </p>
+                  {/*
+                    안내는 공유 대기 화면에서 보여준다.
+                    버튼을 누르기 전에는 필요 없어 여기서는 생략한다.
+                  */}
                 </>
               ) : (
                 <>

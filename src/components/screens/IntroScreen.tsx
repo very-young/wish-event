@@ -43,7 +43,7 @@ export function IntroScreen({
       <div className="center-col">
         <MoonCharacter size={150} float craters className="intro-moon" />
         <div className="eyebrow">{INTRO.eyebrow}</div>
-        <h1 className="title-lg">
+        <h1 className="title-lg intro-title">
           {INTRO.title.split("\n").map((line, i) => (
             <span key={i}>
               {line}
@@ -65,14 +65,6 @@ export function IntroScreen({
           <span className="intro-period-value">{formatPeriod()}</span>
         </div>
 
-        <ol className="intro-steps">
-          {INTRO.howToSteps.map((step, i) => (
-            <li key={i}>
-              <span className="intro-step-no">{i + 1}</span>
-              {step}
-            </li>
-          ))}
-        </ol>
       </div>
 
       <div className="spacer" />
