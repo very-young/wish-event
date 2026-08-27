@@ -568,35 +568,8 @@ body {
  */
 .intro-title {
   font-size: 27px;
-}
-
-.intro-steps {
-  list-style: none;
-  margin-top: 18px;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px 14px;
-  font-size: 13px;
-  color: var(--text-dim);
-}
-
-.intro-steps li {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.intro-step-no {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: rgba(232, 201, 121, 0.2);
-  color: var(--gold);
-  font-size: 11px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  /* 아래 안내 문구와 너무 붙어 보여 간격을 준다 */
+  margin-bottom: 14px;
 }
 
 /* ---------- 유형 선택 ---------- */
