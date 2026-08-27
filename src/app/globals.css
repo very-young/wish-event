@@ -1212,3 +1212,65 @@ body {
   font-size: 15px;
   color: var(--gold);
 }
+
+/* ---------- 결과 화면 미리보기 (개발·검수용) ---------- */
+
+/*
+ * /preview 페이지에서만 쓰는 조작 막대.
+ * 실제 참여 화면에는 나타나지 않는다.
+ */
+.preview-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 500px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+  background: rgba(10, 14, 34, 0.92);
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(6px);
+}
+
+.preview-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.preview-btn,
+.preview-select {
+  font-family: var(--font-gowun-dodum), sans-serif;
+  font-size: 13px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  cursor: pointer;
+}
+
+.preview-btn.on {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--gold-deep);
+  font-weight: 700;
+}
+
+.preview-select option {
+  color: #111;
+}
+
+/*
+ * 결과 화면이 조작 막대에 가리지 않도록 아래 여백을 준다.
+ * 편지 화면은 스크롤되므로 마지막 버튼이 막대 뒤로 숨을 수 있다.
+ */
+.preview-bar ~ .screen.scrollable,
+.stage:has(.preview-bar) .screen.scrollable {
+  padding-bottom: 130px;
+}
