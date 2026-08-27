@@ -25,7 +25,6 @@ export interface LetterScreenProps {
   serial?: string | null;
   onShareRetry(): void;
   onShareInvite(): void;
-  onSaveImage(): void;
   /** 복사 결과를 알린다 */
   onNotify?(message: string): void;
 }
@@ -42,7 +41,6 @@ export function LetterScreen({
   serial,
   onShareRetry,
   onShareInvite,
-  onSaveImage,
   onNotify,
 }: LetterScreenProps) {
   const [opened, setOpened] = useState(false);
@@ -175,30 +173,23 @@ export function LetterScreen({
             )}
 
             <div className="bottom letter-actions fade-in">
-              {/* 당첨자는 네이버폼 이동, 그 외에는 결과 이미지 저장 */}
-              {prizeWon ? (
-                WINNER_FORM_URL ? (
-                  <a
-                    className="btn"
-                    href={WINNER_FORM_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {WINNER.formButton}
-                  </a>
-                ) : (
-                  // 링크가 준비되기 전에는 비활성 상태로 자리를 유지한다
-                  <button type="button" className="btn" disabled>
-                    {WINNER.formButton}
-                  </button>
-                )
-              ) : (
-                <button
-                  type="button"
-                  className="btn ghost"
-                  onClick={onSaveImage}
+              {/*
+                네이버폼은 성공·실패와 무관하게 모두에게 열어준다 (기획 결정).
+                일련번호는 당첨자만 받으므로 폼 제출에 번호가 필요 없다.
+              */}
+              {WINNER_FORM_URL ? (
+                <a
+                  className="btn"
+                  href={WINNER_FORM_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
-                  {LETTER.saveImageButton}
+                  {WINNER.formButton}
+                </a>
+              ) : (
+                // 링크가 준비되기 전에는 비활성 상태로 자리를 유지한다
+                <button type="button" className="btn" disabled>
+                  {WINNER.formButton}
                 </button>
               )}
 

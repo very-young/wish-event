@@ -492,11 +492,6 @@ export function EventFlow() {
     }
   };
 
-  const handleSaveImage = () => {
-    // TODO(3.11): 결과 이미지 저장
-    showToast("이미지 저장은 준비 중이에요.");
-  };
-
   const handleLogout = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -572,7 +567,6 @@ export function EventFlow() {
           serial={serial}
           onShareRetry={handleShareRetry}
           onShareInvite={handleShareInvite}
-          onSaveImage={handleSaveImage}
           onNotify={showToast}
         />
       )}

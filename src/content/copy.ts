@@ -127,7 +127,6 @@ export const LETTER = {
   bodyLose:
     "종이비행기는 밤바람에 잠시 길을 잃었지만,\n당신의 간절한 마음은 제게 닿았어요.\n그 소원이 이루어지길 바라며\n어울리는 곳들을 적어 보내요.",
   placesEyebrow: "소원을 이룰 수 있는 곳",
-  saveImageButton: "결과 이미지 저장",
   reviewButton: "결과 다시 보기",
 } as const;
 
@@ -180,7 +179,8 @@ export const WINNER = {
   copySerial: "번호 복사",
   serialCopied: "일련번호를 복사했어요",
   serialCopyFailed: "복사에 실패했어요. 번호를 직접 적어주세요.",
-  formButton: "네이버폼으로 이동하기",
+  /** 당첨자와 실패자 모두 같은 문구를 쓴다 (기획 결정) */
+  formButton: "네이버폼으로 결과 제출하기",
 } as const;
 
 /** 개인정보 안내 (요구사항 2.6) */

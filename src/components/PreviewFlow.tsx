@@ -77,7 +77,6 @@ export function PreviewFlow() {
           serial={mode === "won" ? SAMPLE_SERIAL : null}
           onShareRetry={() => showToast("미리보기에서는 공유가 동작하지 않아요")}
           onShareInvite={() => showToast("미리보기에서는 공유가 동작하지 않아요")}
-          onSaveImage={() => showToast("미리보기입니다")}
           onNotify={showToast}
         />
       )}
