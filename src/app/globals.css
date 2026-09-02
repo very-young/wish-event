@@ -1274,3 +1274,134 @@ body {
 .stage:has(.preview-bar) .screen.scrollable {
   padding-bottom: 130px;
 }
+
+/* ---------- 달님의 답장 대기 ---------- */
+
+/*
+ * AI 추천을 기다리는 화면.
+ * 오류처럼 보이지 않는 것이 목적이라 정지된 느낌을 주지 않도록
+ * 비행기가 계속 달을 향해 날아가는 연출을 넣었다.
+ */
+.letter-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+  gap: 8px;
+}
+
+.ll-sky {
+  position: relative;
+  width: 200px;
+  height: 150px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  margin-bottom: 22px;
+}
+
+.ll-moon {
+  margin-top: 4px;
+}
+
+/* 아래에서 달을 향해 올라가는 종이비행기 */
+.ll-plane {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  animation: llFly 2.6s ease-in-out infinite;
+}
+
+@keyframes llFly {
+  0% {
+    transform: translate(-50%, 10px) rotate(-8deg) scale(1);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -104px) rotate(-8deg) scale(0.55);
+    opacity: 0;
+  }
+}
+
+/* 비행기가 지나간 자리에 남는 달빛 */
+.ll-trail {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  width: 2px;
+  height: 96px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    to top,
+    rgba(255, 244, 201, 0),
+    rgba(255, 244, 201, 0.32)
+  );
+  animation: llTrail 2.6s ease-in-out infinite;
+}
+
+@keyframes llTrail {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+.ll-message {
+  font-family: var(--font-gowun-batang), serif;
+  font-size: 17px;
+  line-height: 1.7;
+  color: #fff;
+  /* key가 바뀌면 다시 실행돼 문구 전환이 부드러워진다 */
+  animation: llFade 0.5s ease both;
+}
+
+@keyframes llFade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ll-dots {
+  display: flex;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.ll-dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gold);
+  animation: bounce 1.1s infinite;
+}
+
+.ll-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.ll-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+/* 대기 시간을 넘겼을 때 */
+.ll-timeout {
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--text-dim);
+  white-space: pre-line;
+  text-align: center;
+}

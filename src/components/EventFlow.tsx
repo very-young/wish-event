@@ -28,6 +28,7 @@ import type { InputLog } from "@/game/replay";
 import { primeAudio } from "@/lib/sfx";
 import { loadKakao, shareForRetry, shareInvite } from "@/lib/kakao";
 import { createClient } from "@/lib/supabase/client";
+import { useRecommendation } from "@/lib/use-recommendation";
 import {
   getLastAttempt,
   getPlayState,
@@ -86,6 +87,12 @@ export function EventFlow() {
   const [waitingShare, setWaitingShare] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [showPrivacy, setShowPrivacy] = useState(false);
+
+  /*
+   * AI 추천. 종이접기 시점에 요청을 시작해 게임하는 동안 뒤에서 생성한다.
+   * 결과는 편지 화면에서 쓴다.
+   */
+  const recommendation = useRecommendation();
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -333,6 +340,14 @@ export function EventFlow() {
       setAttemptId(start.attemptId);
       setSeeds(start.roundSeeds);
       setGameKey((k) => k + 1);
+
+      /*
+       * AI 추천을 여기서 시작한다 (종이접기 진입 시점).
+       * 접기 5단계와 게임 3라운드를 하는 동안 뒤에서 생성되므로
+       * 결과 화면에서 기다리는 일이 거의 없다.
+       */
+      recommendation.start(start.attemptId);
+
       setStep("fold");
     } finally {
       setBusy(false);
@@ -565,6 +580,12 @@ export function EventFlow() {
           prizeSoldOut={prizeSoldOut}
           places={places}
           serial={serial}
+          // 달님 답장과 명소 3곳은 AI가 소원을 읽고 만든 것을 쓴다
+          aiState={recommendation.state}
+          aiLetter={recommendation.data?.letter}
+          aiPicks={recommendation.data?.picks}
+          onWaitStart={recommendation.beginWaiting}
+          onAiRetry={recommendation.retry}
           onShareRetry={handleShareRetry}
           onShareInvite={handleShareInvite}
           onNotify={showToast}

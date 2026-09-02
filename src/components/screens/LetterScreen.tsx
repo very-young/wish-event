@@ -5,10 +5,19 @@
  * 시안의 s-letter 섹션. 봉투를 눌러 열고 명소 3곳을 본다.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getCategory, type CategoryId, type Place } from "@/content/categories";
-import { INVITE_SHARE, LETTER, RETRY_SHARE, WINNER } from "@/content/copy";
+import {
+  INVITE_SHARE,
+  LETTER,
+  LETTER_LOADING,
+  RETRY_SHARE,
+  WINNER,
+} from "@/content/copy";
 import { WINNER_FORM_URL } from "@/content/settings";
+import { LetterLoading } from "../LetterLoading";
+import type { RecommendState } from "@/lib/use-recommendation";
+import type { RecommendPick } from "@/lib/recommend/engine";
 
 export interface LetterScreenProps {
   category: CategoryId | null;
@@ -23,6 +32,16 @@ export interface LetterScreenProps {
    * 참여자는 이 번호를 복사해 네이버폼으로 제출한다.
    */
   serial?: string | null;
+  /** AI 추천 진행 상태 */
+  aiState?: RecommendState;
+  /** AI가 소원을 읽고 쓴 달님의 답장 */
+  aiLetter?: string;
+  /** AI가 고른 명소 3곳 */
+  aiPicks?: readonly RecommendPick[];
+  /** 편지를 열었을 때 대기 시간 계산을 시작한다 */
+  onWaitStart?(): void;
+  /** 대기 시간을 넘겼을 때 다시 확인 */
+  onAiRetry?(): void;
   onShareRetry(): void;
   onShareInvite(): void;
   /** 복사 결과를 알린다 */
@@ -39,6 +58,11 @@ export function LetterScreen({
   prizeSoldOut,
   places,
   serial,
+  aiState = "ready",
+  aiLetter,
+  aiPicks,
+  onWaitStart,
+  onAiRetry,
   onShareRetry,
   onShareInvite,
   onNotify,
@@ -46,8 +70,38 @@ export function LetterScreen({
   const [opened, setOpened] = useState(false);
 
   const cat = category ? getCategory(category) : undefined;
-  const shownPlaces = places ?? cat?.places ?? [];
   const prizeWon = won && !prizeSoldOut;
+
+  /*
+   * AI 결과를 화면 형식으로 바꾼다.
+   *
+   * AI가 준 명소에는 이미지가 없으므로 유형 아이콘을 대신 쓴다.
+   * AI 결과가 없으면 서버가 저장해 둔 명소를 쓴다(재열람 시).
+   */
+  const aiShownPlaces: Place[] | null =
+    aiPicks && aiPicks.length > 0
+      ? aiPicks.map((p) => ({
+          name: p["명소명"],
+          description: p.catch,
+          emoji: cat?.emoji ?? "🌙",
+        }))
+      : null;
+
+  const shownPlaces = aiShownPlaces ?? places ?? [];
+  const letterBody = aiLetter ?? (won ? LETTER.bodyWin : LETTER.bodyLose);
+
+  /*
+   * 편지를 열었을 때부터 대기 시간을 센다.
+   * 봉투를 누르는 동작 자체가 시간을 벌어주므로 여기서 시작하면 충분하다.
+   */
+  useEffect(() => {
+    if (opened) onWaitStart?.();
+  }, [opened, onWaitStart]);
+
+  /** 아직 답장이 오지 않았으면 기다린다 */
+  const waitingForAi = aiState === "pending";
+  /** 재시도까지 실패했거나 대기 시간을 넘겼다 */
+  const aiUnavailable = aiState === "failed" || aiState === "timeout";
 
   const handleCopySerial = async () => {
     if (!serial) return;
@@ -112,6 +166,12 @@ export function LetterScreen({
                 ))}
             </p>
           </div>
+        ) : waitingForAi ? (
+          /*
+           * 답장이 아직 오지 않았다. 오류처럼 보이지 않게 연출을 보여준다.
+           * 종이접기 시점에 요청했으므로 여기까지 오는 경우는 드물다.
+           */
+          <LetterLoading />
         ) : (
           <div className="letter-opened">
             {/*
@@ -123,12 +183,32 @@ export function LetterScreen({
             {/* 편지 본문 (요구사항 11.4, 11.5) */}
             <div className="letter-card fade-in">
               <div className="letter-from">{LETTER.from}</div>
-              <p className="letter-body">
-                {won ? LETTER.bodyWin : LETTER.bodyLose}
-              </p>
+              <p className="letter-body">{letterBody}</p>
             </div>
 
+            {/*
+              명소를 못 받았을 때 안내 (요구사항 11.6).
+              추천 엔진이 저품질 결과를 내보내지 않도록 설계됐으므로
+              임의로 대체 명소를 만들어 보여주지 않는다.
+            */}
+            {aiUnavailable && shownPlaces.length === 0 && (
+              <div style={{ marginTop: 26 }} className="fade-in">
+                <p className="ll-timeout">{LETTER_LOADING.timeout}</p>
+                {onAiRetry && (
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    style={{ marginTop: 16 }}
+                    onClick={onAiRetry}
+                  >
+                    {LETTER_LOADING.retryButton}
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* 명소 3곳 (요구사항 11.6) */}
+            {shownPlaces.length > 0 && (
             <div style={{ marginTop: 26 }} className="fade-in">
               <div className="eyebrow">{LETTER.placesEyebrow}</div>
               <div className="place-list">
@@ -150,6 +230,7 @@ export function LetterScreen({
                 ))}
               </div>
             </div>
+            )}
 
             {/* 당첨자 안내 (요구사항 10.5, 10.7) */}
             {prizeWon && (

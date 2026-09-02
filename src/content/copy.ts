@@ -130,6 +130,23 @@ export const LETTER = {
   reviewButton: "결과 다시 보기",
 } as const;
 
+/**
+ * 달님의 답장(AI 추천)을 기다릴 때 보여줄 문구.
+ *
+ * 번갈아 보여줘 멈추지 않았다는 느낌을 준다. 실제로 뒤에서 하는 일과
+ * 문구를 일치시켰다 — 답장 쓰기는 letter 생성, 곳 찾기는 명소 추천이다.
+ */
+export const LETTER_LOADING = {
+  messages: [
+    "달님이 답장을 적고 있어요",
+    "소원에 어울리는 곳을 찾고 있어요",
+  ],
+  /** 최대 대기 시간을 넘겼을 때 */
+  timeout:
+    "달님이 답장을 아직 정리하고 있어요.\n잠시 뒤 다시 확인해 주세요.",
+  retryButton: "다시 확인하기",
+} as const;
+
 /** 재도전용 공유 (요구사항 12.1) */
 export const RETRY_SHARE = {
   prompt:

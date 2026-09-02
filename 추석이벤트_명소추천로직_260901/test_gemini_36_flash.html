@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>달님에게 소원을 — 라이트 테스트 v4</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{ --night:#181233; --night-2:#241c47; --moon:#F5D67B; --moon-soft:#F8E3A3; --ink:#3a2f1f; --coral:#E15B4D; --sage:#8FBFA8; --star:#fff; }
+  *{box-sizing:border-box;}
+  html,body{ margin:0; padding:0; background:radial-gradient(ellipse at 50% -10%, var(--night-2), var(--night) 60%); color:#efe6d2; font-family:'Noto Sans KR',sans-serif; min-height:100vh; overflow-x:hidden; }
+  .stage{ position:relative; max-width:520px; margin:0 auto; min-height:100vh; padding:28px 20px 60px; display:flex; flex-direction:column; align-items:center; }
+  .stars{ position:fixed; inset:0; z-index:0; pointer-events:none; }
+  .stars span{ position:absolute; background:var(--star); border-radius:50%; opacity:.55; animation:twinkle 3.5s ease-in-out infinite; }
+  @keyframes twinkle{ 0%,100%{opacity:.2;} 50%{opacity:.85;} }
+  .moon-glow{ position:absolute; top:-60px; left:50%; transform:translateX(-50%); width:220px; height:220px; border-radius:50%; background:radial-gradient(circle at 35% 32%, var(--moon-soft), var(--moon) 55%, #e8be5c 100%); box-shadow:0 0 90px 20px rgba(245,214,123,0.25); z-index:0; }
+  header.top{ position:relative; z-index:1; text-align:center; margin-bottom:6px; padding-top:110px; }
+  .eyebrow{ font-size:11px; letter-spacing:.14em; color:var(--sage); text-transform:uppercase; font-weight:700; margin-bottom:8px; }
+  h1.title{ font-family:'Black Han Sans',sans-serif; font-size:26px; line-height:1.2; margin:0 0 6px; color:#fff; text-shadow:0 2px 12px rgba(0,0,0,.35); }
+  .sub{ font-size:12.5px; color:#cfc4a8; margin:0; line-height:1.6; }
+  .panel{ position:relative; z-index:1; width:100%; margin-top:24px; }
+  .card{ background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:22px; }
+  .step-label{ font-size:12px; font-weight:700; color:var(--moon); letter-spacing:.06em; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+  .step-label .num{ width:20px; height:20px; border-radius:50%; background:var(--coral); color:#fff; font-size:11px; display:flex; align-items:center; justify-content:center; font-family:'Black Han Sans',sans-serif; }
+  .chip-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:9px; }
+  .chip{ background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); border-radius:14px; padding:13px 4px; text-align:center; cursor:pointer; transition:all .18s ease; color:#f1e9d4; font-weight:500; font-size:13px; }
+  .chip:hover{ background:rgba(255,255,255,0.1); transform:translateY(-2px); }
+  .chip.selected{ background:linear-gradient(135deg, var(--coral), #c8493c); border-color:transparent; color:#fff; box-shadow:0 6px 18px rgba(225,91,77,0.35); }
+  textarea#wishText{ width:100%; min-height:90px; margin-top:14px; border-radius:14px; border:1px solid rgba(255,255,255,0.15); background:rgba(0,0,0,0.18); color:#fff; padding:14px; font-family:'Noto Sans KR',sans-serif; font-size:14px; line-height:1.6; resize:none; }
+  textarea#wishText::placeholder{ color:#8f87a8; }
+  .input-error{ color:var(--coral); font-size:12px; margin:8px 2px 0; font-weight:700; }
+  .btn{ appearance:none; border:none; cursor:pointer; font-family:'Noto Sans KR',sans-serif; font-weight:700; font-size:14.5px; border-radius:999px; padding:13px 22px; transition:transform .12s ease; }
+  .btn:active{ transform:scale(0.97); }
+  .btn-primary{ background:var(--moon); color:#3a2f0f; box-shadow:0 6px 16px rgba(245,214,123,0.3); }
+  .btn-primary:disabled{ opacity:.35; cursor:not-allowed; box-shadow:none; }
+  .btn-ghost{ background:transparent; color:#efe6d2; border:1px solid rgba(255,255,255,0.25); }
+  .btn-row{ display:flex; justify-content:center; margin-top:16px; gap:10px; }
+  .fade-el{ display:none; flex-direction:column; align-items:center; }
+  .fade-el.show{ display:flex; animation:fadeUp .4s ease; }
+  @keyframes fadeUp{ from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);} }
+  .letter-card{ width:100%; border-radius:18px; padding:24px 22px; background:linear-gradient(160deg,#efe0b8,#ddc788); color:var(--ink); box-shadow:0 12px 30px rgba(0,0,0,.4); }
+  .letter-card .from{ font-size:11px; letter-spacing:.08em; color:#8a6a25; font-weight:700; margin-bottom:10px; }
+  .letter-card .body{ font-size:14.5px; line-height:1.85; color:#4a3a20; white-space:pre-line; }
+  .places{ width:100%; margin-top:16px; display:flex; flex-direction:column; gap:10px; }
+  .place{ background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:13px 16px; display:flex; align-items:center; gap:12px; min-height:118px; }
+  .place .moon-mini{ font-size:20px; flex-shrink:0; }
+  .place .txt{ flex:1; min-width:0; }
+  .place .catch{ font-size:12px; white-space:normal; overflow:visible; color:var(--moon-soft); font-weight:600; margin-top:5px; line-height:1.45; display:block; word-break:keep-all; overflow-wrap:break-word; }
+  .place .region-tag{ font-size:10.5px; color:var(--sage); font-weight:700; margin-bottom:1px; }
+  .place h3{ margin:0; font-size:15.5px; color:#fff; }
+  .places-label{ font-size:12.5px; color:var(--moon-soft); font-weight:700; margin:4px 0 2px; text-align:center; }
+  .again-hint{ font-size:12px; color:#a89a75; margin-top:16px; text-align:center; line-height:1.6; }
+  .footnote{ margin-top:26px; text-align:center; font-size:10.5px; color:#7a7196; line-height:1.7; }
+  .safety-card{ width:100%; border-radius:18px; padding:22px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); text-align:center; }
+  .safety-card p{ font-size:13.5px; line-height:1.8; color:#efe6d2; }
+  #debugPanel{ display:none; position:fixed; right:0; top:0; bottom:0; width:320px; max-width:92vw; background:rgba(10,8,24,0.97); color:#d8f0e2; z-index:999; padding:16px; overflow-y:auto; font-size:11px; line-height:1.5; border-left:1px solid rgba(255,255,255,0.12); font-family:'Menlo','Consolas',monospace; }
+  #debugPanel.show{ display:block; }
+  #debugPanel h3{ font-size:12px; color:var(--moon); margin:14px 0 6px; text-transform:uppercase; }
+  #debugPanel .drow{ padding:5px 7px; margin-bottom:4px; border-radius:7px; background:rgba(255,255,255,0.04); }
+  #debugToggleHint{ position:fixed; left:8px; bottom:8px; font-size:9px; color:#3a3550; z-index:998; }
+  @media (max-width:380px){ h1.title{ font-size:21px; } }
+</style>
+</head>
+<body>
+
+<div class="stars" id="starField"></div>
+<div class="stage">
+  <div class="moon-glow"></div>
+  <header class="top">
+    <div class="eyebrow">100X100 · FULL DB · Gemini 3.6 Flash</div>
+    <h1 class="title">달님에게 소원을</h1>
+    <p class="sub">실제 100X100 선정 명소 전체에서 <b>Gemini 3.6 Flash</b>가<br>소원에 어울리는 명소 3곳을 고릅니다.</p>
+  </header>
+
+  <div class="panel" id="panelInput">
+    <div class="card">
+      <div class="step-label"><span class="num">1</span> 어떤 소원인가요?</div>
+      <div class="chip-grid" id="chipGrid"></div>
+      <div class="step-label" style="margin-top:18px;"><span class="num">2</span> 달님에게 전할 소원을 적어주세요</div>
+      <textarea id="wishText" placeholder="예: 원하는 회사에 취업하고 싶어요"></textarea>
+      <p class="input-error" id="inputError" style="display:none;">내용을 다시 입력해주세요.</p>
+      <div class="btn-row"><button class="btn btn-primary" id="submitBtn" disabled>달에게 소원 전하기 →</button></div>
+    </div>
+  </div>
+
+  <div class="panel" id="panelLetter" style="display:none;">
+    <div class="card">
+      <div class="fade-el show" id="letterWrap">
+        <div class="letter-card">
+          <div class="from">FROM. 달님</div>
+          <div class="body" id="letterBody"></div>
+        </div>
+        <div class="btn-row"><button class="btn btn-primary" id="openLetterBtn">편지 넘겨서 명소 보기 →</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panelResult" style="display:none;">
+    <div class="card">
+      <div class="fade-el show" id="resultWrap"></div>
+    </div>
+  </div>
+
+  <p class="footnote">이 화면은 매칭 로직 방향성 검증을 위한 <b>라이트 테스트 프로토타입</b>입니다.</p>
+</div>
+
+<div id="debugPanel"></div>
+<div id="debugToggleHint">debug: ?debug=1 or Ctrl+Shift+D</div>
+
+<script>
+const API_PROVIDER = 'gemini';
+
+// =====================================================================
+// 100X100 소원매칭 — 라이트 테스트 v4 · 상황분석
+// - 명소별 고유 캐치프레이즈 (역할 공용 카피 재사용 X)
+// - 재물·자산 세부 의도별 역할 분리 (주식전망/청약명당/행운스팟/재물체험/안정절제)
+// - "달의 답장" 2단계 노출 (편지 먼저 → 넘기면 명소 3곳)
+// =====================================================================
+
+const CATEGORIES = ['건강·무탈', '성장·학업', '사랑·인연', '재물·자산', '이직·취업', '효도·가족'];
+
+const CANDIDATES = [{"role": "자연치유", "지역": "제주", "명소명": "비자림", "원본설명": "하늘을 향해 곧게 뻗은 비자나무 숲에서 피톤치드 가득한 산책을 즐길 수 있는 곳", "catch": "숲 냄새 맡으며 리셋하기"}, {"role": "자연치유", "지역": "제주", "명소명": "사려니숲길", "원본설명": "숲속 흙길로 시원한 그늘과 맑은 공기를 느끼며 걷기 좋은 힐링 숲길", "catch": "천천히 걸으며 숨 고르기"}, {"role": "자연치유", "지역": "전남", "명소명": "담양 죽녹원", "원본설명": "울창한 대나무숲 사이 산책로에서 마음이 절로 차분해지는 곳", "catch": "대숲 바람 쐬고 개운해지기"}, {"role": "자연치유", "지역": "전남", "명소명": "담양 메타세쿼이아가로수길", "원본설명": "길게 늘어선 메타세쿼이아 나무 터널이 동화 속 풍경처럼 펼쳐지는 길", "catch": "초록 터널 지나며 머리 식히기"}, {"role": "자연치유", "지역": "충북", "명소명": "옥천 화인삼림욕장", "원본설명": "한 개인이 수십 년간 나무를 심고 가꾼 정성 가득한 힐링 숲", "catch": "누군가 정성껏 가꾼 숲에서 쉬어가기"}, {"role": "운동체력", "지역": "서울", "명소명": "여의도 한강공원", "원본설명": "여의도~반포 한강변을 따라 이어지는 초보자부터 즐길 수 있는 대표 러닝 코스", "catch": "달리면서 몸부터 깨우기"}, {"role": "운동체력", "지역": "경남", "명소명": "산청 경호강 래프팅", "원본설명": "지리산 거친 물살에서 즐기는 짜릿한 래프팅으로 체력을 쓰기 좋은 곳", "catch": "물살 가르며 체력 충전하기"}, {"role": "운동체력", "지역": "충북", "명소명": "단양 카페산 패러글라이딩", "원본설명": "국내 패러글라이딩 1번지로, 몸도 마음도 짜릿하게 깨워주는 곳", "catch": "하늘 한번 날면서 짜릿하게"}, {"role": "운동체력", "지역": "울산", "명소명": "울산 십리대숲길", "원본설명": "끝없이 펼쳐진 대나무 터널 속에서 시원한 바람 맞으며 달리기 좋은 길", "catch": "대숲 바람 맞으며 달려보기"}, {"role": "운동체력", "지역": "강원", "명소명": "정선 하이원리조트 알파인코스터", "원본설명": "고원 산악지대를 내달리는 레일 코스터로 사계절 즐길 수 있는 어드벤처", "catch": "신나게 달리며 스트레스 날리기"}, {"role": "건강식", "지역": "경남", "명소명": "산청 동의약선관", "원본설명": "인공 조미료 사용을 최소화하고 지리산 약초와 산나물을 주재료로 한 채식 체험이 가능한 곳", "catch": "지리산 약초로 몸부터 가볍게"}, {"role": "건강식", "지역": "전남", "명소명": "강진 사찰음식 체험관", "원본설명": "남도 밥상과 사찰 음식이 만난 건강한 한끼를 경험할 수 있는 곳", "catch": "건강한 한 끼로 시작하기"}, {"role": "건강식", "지역": "전북", "명소명": "전주 한국집", "원본설명": "전주비빔밥 원조급으로, 채식·비건 선택도 가능한 전통 한식 대표 맛집", "catch": "든든하지만 가볍게 비빔밥 한 그릇"}, {"role": "건강식", "지역": "서울", "명소명": "산촌", "원본설명": "사찰식 한정식과 비건 메뉴로 몸을 가볍게 채울 수 있는 곳", "catch": "사찰식 한 상으로 속 편하게"}, {"role": "건강식", "지역": "강원", "명소명": "강릉 초당두부마을", "원본설명": "깨끗한 바닷물을 간수로 쓴 초당두부 전문점이 모여 있는 건강한 먹거리 골목", "catch": "고소한 두부 한 모로 건강 충전"}, {"role": "반려동물", "지역": "강원", "명소명": "양양 멍비치", "원본설명": "국내 최초 반려견 전용 해변으로 넓은 모래사장과 편의시설을 갖춘 곳", "catch": "반려견과 나란히 바닷바람 쐬기"}, {"role": "반려동물", "지역": "울산", "명소명": "울산 간절곶", "원본설명": "넓은 잔디밭과 해안 산책로가 있어 반려견과 함께 산책하기 좋은 곳", "catch": "함께 걸을수록 둘 다 건강해지기"}, {"role": "반려동물", "지역": "경북", "명소명": "경주 보문관광단지", "원본설명": "호수 주변 산책로와 다양한 숙박시설로 반려동물과 함께 머무는 여행이 가능한 곳", "catch": "반려동물과 느긋하게 머물기"}, {"role": "반려동물", "지역": "울산", "명소명": "울산 애견운동공원", "원본설명": "국가정원과 연결된 전용 운동장으로 시민과 반려견 모두에게 사랑받는 공간", "catch": "맘껏 뛰어놀며 스트레스 날리기"}, {"role": "반려동물", "지역": "경남", "명소명": "김해댕댕파크", "원본설명": "영남권 최대 반려동물 테마공원으로 체급별 놀이 공간이 분리되어 있는 곳", "catch": "체급별로 안전하게 신나게 놀기"}, {"role": "학업몰입", "지역": "서울", "명소명": "별마당도서관", "원본설명": "탁 트인 대형 서가와 조용한 분위기로 몰입해서 집중하기 좋은 공간", "catch": "책 냄새 맡으며 집중력 챙기기"}, {"role": "학업몰입", "지역": "서울", "명소명": "국립중앙도서관", "원본설명": "넓고 조용한 열람실에서 실전처럼 몰입하기 좋은 대표 도서관", "catch": "넓은 열람실서 제대로 몰입하기"}, {"role": "학업몰입", "지역": "부산", "명소명": "보수동 책방골목", "원본설명": "오래된 책방들이 모여 있는 골목으로 마음을 차분히 다잡기 좋은 곳", "catch": "오래된 책방 골목서 마음 다잡기"}, {"role": "학업몰입", "지역": "서울", "명소명": "연세대학교 신촌캠퍼스", "원본설명": "100년이 넘은 고풍스러운 석조 건물과 울창한 숲이 어우러진 캠퍼스", "catch": "캠퍼스 숲길 걸으며 머리 식히기"}, {"role": "학업몰입", "지역": "서울", "명소명": "고려대학교 서울캠퍼스", "원본설명": "영국 고딕 양식의 붉은 벽돌 본관이 아름다운 서울 대표 캠퍼스", "catch": "고풍스러운 캠퍼스서 각오 다지기"}, {"role": "학업몰입", "지역": "서울", "명소명": "서울대학교 관악캠퍼스", "원본설명": "관악산 자락을 따라 펼쳐진 캠퍼스로 계절마다 달라지는 숲길이 있는 곳", "catch": "관악산 자락서 계획 세워보기"}, {"role": "성찰다짐", "지역": "경북", "명소명": "문경새재 도립공원", "원본설명": "옛 영남 선비들이 과거를 보러 넘던 실제 고갯길로, 마음을 다잡기 좋은 역사길", "catch": "옛 선비들 과거길 따라 걸어보기"}, {"role": "성찰다짐", "지역": "서울", "명소명": "낙산공원", "원본설명": "서울 성곽길을 품은 전망대로, 걸으며 스스로를 돌아보기 좋은 곳", "catch": "성곽길 걸으며 나를 돌아보기"}, {"role": "성찰다짐", "지역": "경기", "명소명": "수원 화성", "원본설명": "정조대왕이 건설한 성곽 둘레길로, 차분히 걸으며 다짐을 되새기기 좋은 곳", "catch": "성곽 한 바퀴 돌며 다짐 새기기"}, {"role": "이별회복", "지역": "전남", "명소명": "담양 메타세쿼이아가로수길", "원본설명": "길게 늘어선 나무 터널을 걸으며 마음을 정리하기 좋은 곳", "catch": "걸으며 마음 한 켠 비워내기"}, {"role": "이별회복", "지역": "부산", "명소명": "광안대교", "원본설명": "해운대와 광안리를 동시에 조망할 수 있는 드라이브 명소로 머리를 식히기 좋은 곳", "catch": "야경 보며 잠시 머리 식히기"}, {"role": "이별회복", "지역": "제주", "명소명": "비자림로", "원본설명": "하늘을 가릴 정도로 높게 솟은 삼나무길을 달리며 생각을 비우기 좋은 드라이브 코스", "catch": "삼나무길 달리며 생각 비우기"}, {"role": "이별회복", "지역": "제주", "명소명": "1100고지 드라이브코스", "원본설명": "한라산 중턱 숲 터널과 다채로운 풍경을 감상하며 달리는 제주 최고의 산악 도로", "catch": "산길 드라이브로 기분 전환하기"}, {"role": "로맨틱만남", "지역": "제주", "명소명": "협재해수욕장", "원본설명": "에메랄드빛 물빛과 하얀 모래사장이 어우러진 낭만적인 해변", "catch": "여기서 설렘이 시작될지도"}, {"role": "로맨틱만남", "지역": "경남", "명소명": "거제 바람의 언덕", "원본설명": "푸른 바다와 하얀 풍차가 어우러져 이국적인 분위기를 자아내는 언덕", "catch": "바람 언덕에서 좋은 인연 만나기"}, {"role": "로맨틱만남", "지역": "전남", "명소명": "보성 대한다원 보성녹차밭", "원본설명": "계단식 차밭의 초록빛 곡선미가 돋보이는 평온하고 낭만적인 풍경", "catch": "찻밭길 걸으며 인연 기다리기"}, {"role": "로맨틱만남", "지역": "제주", "명소명": "용머리해안", "원본설명": "거대한 해안 절벽과 파도가 어우러진 압도적인 풍경의 해안", "catch": "압도적인 풍경 앞에서 설레보기"}, {"role": "자기계발꾸미기", "지역": "서울", "명소명": "올리브영N 성수", "원본설명": "다양한 K-뷰티 제품을 직접 테스트하고 체험할 수 있는 복합 공간", "catch": "나부터 먼저 반짝이게 가꾸기"}, {"role": "자기계발꾸미기", "지역": "경남", "명소명": "산청 동의보감촌", "원본설명": "한방 약초를 활용한 팩과 건강 뷰티 체험으로 몸과 마음을 정화할 수 있는 곳", "catch": "한방 뷰티로 안팎으로 가꾸기"}, {"role": "자기계발꾸미기", "지역": "서울", "명소명": "명동 K-뷰티 거리", "원본설명": "이니스프리·에뛰드·설화수 등 K-뷰티 브랜드 본점이 밀집한 거리", "catch": "취향껏 골라보며 자신감 충전"}, {"role": "자기계발꾸미기", "지역": "부산", "명소명": "센텀 스파랜드", "원본설명": "프리미엄 찜질과 함께 몸을 가꾸며 재정비할 수 있는 공간", "catch": "몸도 마음도 개운하게 정비하기"}, {"role": "인연커뮤니티", "지역": "부산", "명소명": "모모스커피 본점", "원본설명": "스페셜티 커피와 로컬 감성이 어우러진, 새로운 사람들과 마주치기 좋은 로스터리 카페", "catch": "커피 한 잔 하며 낯선 인연 만나기"}, {"role": "인연커뮤니티", "지역": "강원", "명소명": "강릉 커피거리", "원본설명": "바닷가를 따라 늘어선 로스터리 카페들이 모인, 여유로운 만남이 있는 거리", "catch": "바닷가 걸으며 여유로운 만남 찾기"}, {"role": "인연커뮤니티", "지역": "부산", "명소명": "전포카페거리", "원본설명": "개성 넘치는 로컬 카페들이 모여 있어 발길 닿는 대로 걷기 좋은 거리", "catch": "골목 걷다 우연히 마주치기"}, {"role": "주식전망", "지역": "서울", "명소명": "서울스카이", "원본설명": "가장 높은 곳에서 서울 시내를 360도로 조망하는 압도적 뷰", "catch": "내 주식도 이 높이까지 올라가주라"}, {"role": "주식전망", "지역": "대구", "명소명": "83타워", "원본설명": "대구 도심 야경이 사방으로 펼쳐져, 대구를 대표하는 전망 명소다운 압도적인 스카이라인을 감상하게 됨", "catch": "쭉쭉 뻗은 저 야경처럼, 내 차트도"}, {"role": "주식전망", "지역": "충북", "명소명": "단양 만천하스카이워크", "원본설명": "절벽 끝 스카이워크 위에 서면 단양강과 산세가 한눈에 펼쳐져 천하를 품은 듯한 압도감을 느끼게 됨", "catch": "천하를 내려다보듯, 계좌도 시원하게"}, {"role": "주식전망", "지역": "부산", "명소명": "부산엑스더스카이", "원본설명": "해운대 백사장과 광안대교까지 한눈에 담기는 압도적인 뷰", "catch": "상한가 가즈아, 이 뷰랑 같이"}, {"role": "주식전망", "지역": "전남", "명소명": "해남 땅끝전망대", "원본설명": "끝없이 이어지는 다도해 섬 풍경이 한눈에 펼쳐져 한반도의 끝에 선 듯한 벅찬 전망을 마주하게 됨", "catch": "땅끝까지 왔으니 이제 오를 일만"}, {"role": "청약명당", "지역": "경북", "명소명": "영주 부석사", "원본설명": "무량수전 배흘림 기둥에 서서 바라보는 소백산맥의 노을이 아름다운 천년 고찰", "catch": "명당은 여기, 좋은 집도 곧"}, {"role": "청약명당", "지역": "경북", "명소명": "안동 부용대", "원본설명": "하회마을을 휘감아 흐르는 물돌이 지형을 가장 높은 곳에서 내려다볼 수 있는 절벽", "catch": "물돌이처럼 좋은 소식 돌아오길"}, {"role": "청약명당", "지역": "경남", "명소명": "남해 다랭이마을", "원본설명": "바다를 향해 깎아지른 산비탈을 일구어 만든 100여 층의 계단식 논이 그림처럼 펼쳐진 마을", "catch": "한 계단씩 일군 땅처럼, 내 집도"}, {"role": "행운스팟", "지역": "제주", "명소명": "새별오름", "원본설명": "완만한 능선을 올라서면 제주 들판과 오름, 바다가 시원하게 펼쳐지는 조망 명소", "catch": "혹시 이번 주 행운의 주인공?"}, {"role": "행운스팟", "지역": "강원", "명소명": "정선 병방치스카이워크", "원본설명": "한반도지형을 바라보며 아찔한 투명유리 위를 걷는 체험", "catch": "짜릿한 한 방, 노려볼까"}, {"role": "행운스팟", "지역": "경북", "명소명": "포항 이가리 닻 전망대", "원본설명": "푸른 바다 위로 길게 뻗은 전망대 끝에 서면 마치 바다 한가운데 떠 있는 듯한 기분을 느끼게 됨", "catch": "바다 한가운데서 행운 한 스푼"}, {"role": "재물체험", "지역": "강원", "명소명": "정선 화암동굴", "원본설명": "과거 실제 금이 나왔던 폐금광을 활용한 동굴로, 황금빛 석순과 종유석이 신비로운 곳", "catch": "금광캐고 갑부될까?"}, {"role": "재물체험", "지역": "충남", "명소명": "금산 인삼시장", "원본설명": "전국 인삼의 80%가 유통되는 최대 인삼시장으로 귀한 작물이 오가는 활기찬 곳", "catch": "인삼으로 돈벌어보자~!"}, {"role": "재물체험", "지역": "경북", "명소명": "영주 풍기인삼축제", "원본설명": "인삼 체험과 수확 체험 등 즐길거리가 풍부한 축제", "catch": "귀한 걸 직접 캐보는 손맛"}, {"role": "안정절제", "지역": "경북", "명소명": "경주 최부자댁", "원본설명": "화려한 궁궐보다는 검소하지만 기품 있는 부자의 절제를 보여주는 공간", "catch": "부담은 내려놓고 잠시 걸어볼까"}, {"role": "안정절제", "지역": "전남", "명소명": "순천만국가정원", "원본설명": "세계 각국의 정원이 어우러진 대한민국 1호 국가정원", "catch": "걱정은 잠시 내려놓고 걸어보기"}, {"role": "안정절제", "지역": "울산", "명소명": "태화강 국가정원", "원본설명": "십리대숲과 생태계가 어우러진 도심 속 여유로운 정원", "catch": "천천히 걸으며 마음 짐 가볍게"}, {"role": "가족체험", "지역": "경기", "명소명": "용인 에버랜드", "원본설명": "다양한 어트랙션과 동물원을 갖춰 온 가족이 함께 즐기기 좋은 대표 테마파크", "catch": "다 같이 신나게 하루 놀아보기"}, {"role": "가족체험", "지역": "경기", "명소명": "용인 한국민속촌", "원본설명": "한국 고유의 민속전시장으로 아이들과 함께 다양한 놀이 체험이 가능한 곳", "catch": "온 가족이 함께 즐기는 전통 체험"}, {"role": "가족체험", "지역": "서울", "명소명": "서울어린이대공원", "원본설명": "동물원, 식물원, 놀이동산을 갖춘 대규모 가족 테마공원", "catch": "동물원 구경하며 온 가족 소풍"}, {"role": "가족체험", "지역": "경북", "명소명": "경주월드", "원본설명": "다양한 어트랙션을 갖춰 온 가족이 신나게 즐길 수 있는 테마파크", "catch": "짜릿한 놀이기구로 다 같이 신나게"}, {"role": "가족힐링", "지역": "울산", "명소명": "태화강 국가정원", "원본설명": "십리대숲과 생태계가 어우러져 가족이 함께 산책하며 마음을 풀기 좋은 정원", "catch": "대숲길 걸으며 다투지 말고 산책"}, {"role": "가족힐링", "지역": "전남", "명소명": "순천만국가정원", "원본설명": "세계 각국의 정원을 거닐며 가족 모두 여유를 느낄 수 있는 곳", "catch": "정원 거닐며 다같이 마음 풀기"}, {"role": "가족힐링", "지역": "경기", "명소명": "광주 화담숲", "원본설명": "자연의 아름다움을 담은 생태정원으로 함께 걷기 좋은 곳", "catch": "숲길 따라 걸으며 화해하기"}, {"role": "그리움추모", "지역": "전남", "명소명": "순천만국가정원", "원본설명": "고요히 걸으며 마음을 가만히 들여다보기 좋은 정원", "catch": "가만히 걸으며 마음을 전해보세요"}, {"role": "그리움추모", "지역": "경남", "명소명": "합천 해인사", "원본설명": "산중 깊은 곳에서 조용히 마음을 전하고 기도하기 좋은 사찰", "catch": "산속 깊은 곳에서 조용히 마음 전하기"}, {"role": "그리움추모", "지역": "서울", "명소명": "창덕궁 후원", "원본설명": "자연 지형을 그대로 살린 고요한 궁궐 정원", "catch": "고요한 정원에서 그리운 마음 다독이기"}, {"role": "기원", "지역": "경북", "명소명": "경주 불국사", "원본설명": "신라 불교문화의 상징인 세계유산 사찰로 경건한 참배와 소원 기도를 함께 하기 좋은 대표 성지", "catch": "마음을 담아 조용히 빌어보기"}, {"role": "기원", "지역": "경남", "명소명": "합천 해인사", "원본설명": "깊은 산중의 수행 사찰이자 팔만대장경을 품은 곳으로 마음을 낮추고 기도하기 좋은 불교 성지", "catch": "산사의 기운 받으며 소원 빌기"}, {"role": "기원", "지역": "경남", "명소명": "산청 정취암", "원본설명": "바위와 산세가 어우러진 암자에서 쌍거북바위에 소원을 빌며 기도하기 좋은 산중 명소", "catch": "쌍거북바위에 소원 하나 얹기"}, {"role": "기원", "지역": "대구", "명소명": "팔공산 갓바위", "원본설명": "한 가지 소원을 들어준다는 믿음으로 입시철과 새해에 특히 많이 찾는 대표 소원 기도 명소", "catch": "한 가지 소원은 들어준다는 그곳"}, {"role": "기원", "지역": "강원", "명소명": "양양 낙산사", "원본설명": "관음신앙을 대표하는 동해안 사찰로 바다를 바라보며 평안과 소원을 기원하기 좋은 곳", "catch": "바다 보며 평안한 마음으로 빌기"}, {"role": "기원", "지역": "경북", "명소명": "영주 부석사", "원본설명": "무량수전의 고요한 아름다움과 산사의 기운 속에서 마음의 평안과 소원을 빌기 좋은 세계유산 사찰", "catch": "고요한 산사에서 마음 다잡기"}, {"role": "기원", "지역": "경남", "명소명": "밀양 만어사", "원본설명": "종소리 나는 돌 전설이 전해지는 사찰로 신비로운 분위기 속에서 소원 성취를 기원하기 좋은 곳", "catch": "신비로운 돌소리 들으며 소원 빌기"}, {"role": "기원", "지역": "전남", "명소명": "구례 화엄사", "원본설명": "지리산 자락의 대가람에서 천년 불교의 깊이를 느끼며 마음의 평안과 소원을 기도하기 좋은 곳", "catch": "천년 고찰서 마음 편히 빌어보기"}, {"role": "기원", "지역": "제주", "명소명": "성산일출봉", "원본설명": "바다 위 거대한 분화구 봉우리에서 맞는 제주 최고의 일출 명소로 바다 위로 솟아오르는 태양", "catch": "떠오르는 해 보며 소원 빌기"}, {"role": "기원", "지역": "강원", "명소명": "강릉 정동진", "원본설명": "전국에서 바다가 가장 가까운 역으로, 해돋이 명소로 유명한 곳", "catch": "바다 가까운 곳에서 해돋이 소원"}, {"role": "기원", "지역": "경북", "명소명": "포항 호미곶해맞이광장", "원본설명": "한반도 최동단 호미곶에서 맞는 일출. 붉은 태양이 떠오르는 상징적인 곳", "catch": "한반도 동쪽 끝에서 첫 소원 빌기"}, {"role": "기원", "지역": "경남", "명소명": "남해 보리암", "원본설명": "기암괴석 절벽 위에 세워진 사찰에서 내려다보는 다도해 일출이 신비로운 곳", "catch": "절벽 위 사찰서 일출 보며 빌기"}]; // {role, 지역, 명소명, 원본설명, catch}
+
+// ---------------------------------------------------------------------
+// v4 테스트용 상황 적합 후보
+// 실제 배포 시 이 블록은 100X100 원본 DB의 같은 태그 후보로 교체하면 됨.
+// ---------------------------------------------------------------------
+CANDIDATES.push(
+  {role:'마음안정', 지역:'경기', 명소명:'평택 트리비움', 원본설명:'요가와 명상 등 차분한 웰니스 경험을 통해 몸과 마음을 가다듬기 좋은 공간', catch:'호흡을 고르며 몸과 마음의 준비하기'},
+  {role:'마음안정', 지역:'제주', 명소명:'사려니숲길', 원본설명:'숲속 흙길로 시원한 그늘과 맑은 공기를 느끼며 걷기 좋은 힐링 숲길', catch:'조용한 숲길에서 마음부터 가라앉히기'},
+  {role:'마음안정', 지역:'전남', 명소명:'순천만국가정원', 원본설명:'세계 각국의 정원이 어우러진 대한민국 1호 국가정원', catch:'정원을 천천히 걸으며 걱정 내려놓기'},
+  {role:'현재연애지속', 지역:'제주', 명소명:'협재해수욕장', 원본설명:'에메랄드빛 물빛과 하얀 모래사장이 어우러진 낭만적인 해변', catch:'지금 곁에 있는 사람과 좋은 하루 더 쌓기'},
+  {role:'현재연애지속', 지역:'전남', 명소명:'보성 대한다원 보성녹차밭', 원본설명:'계단식 차밭의 초록빛 곡선미가 돋보이는 평온하고 낭만적인 풍경', catch:'나란히 천천히 걸으며 오래 갈 마음 나누기'},
+  {role:'현재연애지속', 지역:'전남', 명소명:'순천만국가정원', 원본설명:'세계 각국의 정원이 어우러진 대한민국 1호 국가정원', catch:'둘이 함께 걷고 이야기하며 평범한 행복 쌓기'},
+  {role:'가벼운활동', 지역:'서울', 명소명:'여의도 한강공원', 원본설명:'한강변을 따라 가볍게 걷고 달리며 몸을 움직이기 좋은 대표 코스', catch:'바람 맞으며 가볍게 몸 움직이기'},
+  {role:'가벼운활동', 지역:'울산', 명소명:'울산 십리대숲길', 원본설명:'끝없이 펼쳐진 대나무 터널 속에서 시원한 바람 맞으며 걷고 달리기 좋은 길', catch:'대숲 사이를 가볍게 걸으며 활력 채우기'}
+);
+
+
+const CATEGORY_ROLES = {
+  '건강·무탈': ['자연치유', '운동체력', '가벼운활동', '건강식', '반려동물', '마음안정', '기원'],
+  '성장·학업': ['학업몰입', '성찰다짐', '기원'],
+  '사랑·인연': ['이별회복', '로맨틱만남', '현재연애지속', '자기계발꾸미기', '인연커뮤니티', '마음안정', '기원'],
+  '재물·자산': ['주식전망', '청약명당', '행운스팟', '재물체험', '안정절제', '기원'],
+  '이직·취업': ['학업몰입', '기원', '자연치유', '마음안정'],
+  '효도·가족': ['가족체험', '가족힐링', '그리움추모', '마음안정', '기원'],
+};
+
+const ROLE_KEYWORDS = {
+  자연치유: ['힐링', '숲', '피곤', '지쳐', '지침', '번아웃', '쉬고', '휴식', '스트레스', '편안', '마음이 편', '아이가 건강하게', '아이가 컸으면', '키가 컸으면', '키 크고', '키가 크게', '키가 쑥쑥', '마음이 무거운', '마음이 복잡'],
+  운동체력: ['체력', '근육', '운동', '헬스', '튼튼', '건강해지고'],
+  건강식: ['다이어트', '살 빼', '식단', '살 빠지', '건강하게 먹', '체중'],
+  반려동물: ['강아지', '고양이', '반려동물', '반려견', '반려묘', '댕댕이', '냥이', '멍멍이'],
+  이별회복: ['헤어진', '이별', '잊고 싶', '그리워', '미련', '벗어나고', '보고싶', '보고 싶', '다시 만나', '재회', '다시 연락'],
+  로맨틱만남: ['연애', '애인', '인연', '썸', '고백', '소개팅', '운명', '짝사랑'],
+  자기계발꾸미기: ['꾸미고', '예뻐지', '자신감', '매력', '가꾸고'],
+  인연커뮤니티: ['외로워', '외로운', '친구', '모임'],
+  학업몰입: ['공부', '시험', '합격', '취업', '자격증', '이직', '면접', '집중', '대학'],
+  성찰다짐: ['성장', '어른', '책임감', '다짐', '변화하고'],
+  주식전망: ['주식', '증시', '차트', '상한가', '우상향', '투자'],
+  청약명당: ['청약', '내 집', '아파트', '부동산', '분양'],
+  행운스팟: ['로또', '복권', '당첨되고 싶', '일확천금'],
+  재물체험: ['돈 많이', '부자', '벌고 싶', '수입', '재물'],
+  안정절제: ['빚', '걱정 없이', '편안하게 살', '여유롭게', '갚고', '걱정없이'],
+  가족체험: ['추억', '나들이', '즐겁', '함께 놀'],
+  가족힐링: ['잔소리', '다투지', '싸우지', '피하고 싶'],
+  기원: ['제발', '꼭', '간절', '붙었으면', '당첨', '뽑혔으면', '이뤄지게', '이뤄졌으면', '빌어요', '기도', '합격', '부모님', '장수', '오래 건강', '수술', '완쾌', '나았으면', '아무 일 없', '무탈하게', '사고 없이'],
+};
+
+const FALLBACK_ROLE = {
+  '건강·무탈': '자연치유', '성장·학업': '학업몰입', '사랑·인연': '로맨틱만남',
+  '재물·자산': '안정절제', '이직·취업': '학업몰입', '효도·가족': '가족체험',
+};
+
+// ---------------------------------------------------------------------
+// "달의 답장" — 카테고리 기본 답장 + 세부 역할별 오버라이드(재물·자산, 그리움추모)
+// ---------------------------------------------------------------------
+const LETTER_DEFAULT = {
+  '건강·무탈': '무탈한 하루가 이어지는 것만큼 큰 행운도 없지.\n잠시 숨을 고르고 몸과 마음을 돌볼 수 있는 곳을 찾아봤어.\n건강한 내일을 바라며 천천히 다녀와.',
+  '성장·학업': '차곡차곡 쌓아온 시간은 분명 너를 앞으로 데려갈 거야.\n잠시 머리를 식히고 다시 힘차게 나아갈 수 있는 곳을 찾아봤어.\n네 노력이 좋은 결실로 이어지길 바라.',
+  '사랑·인연': '좋은 인연은 생각지 못한 순간, 새로운 풍경처럼 찾아오기도 하니까.\n설레는 마음으로 걸어볼 만한 곳을 찾아봤어.\n네 마음에 반가운 인연이 닿기를 바라.',
+  '재물·자산': '차곡차곡 채워가는 마음이 언젠가 넉넉한 결실이 되기를.\n좋은 기운을 품고 새로운 가능성을 그려볼 만한 곳을 찾아봤어.\n바라던 풍요가 조금씩 가까워지길 바라.',
+  '이직·취업': '새로운 길 앞에서 망설이는 것도 앞으로 나아가는 과정일 거야.\n잠시 시야를 넓히고 다음 발걸음을 생각해볼 곳을 찾아봤어.\n네가 바라던 기회와 곧 마주하기를 바라.',
+  '효도·가족': '함께 웃는 평범한 날들이 오래 이어지는 게 가장 따뜻한 소원일지도 몰라.\n소중한 사람들과 마음을 나눌 수 있는 곳을 찾아봤어.\n가족의 건강과 행복이 오래 함께하기를 바라.',
+};
+
+const LETTER_ROLE_OVERRIDE = {
+  주식전망: '차트만 들여다본다고 오르는 건 아니지만, 마음만은 시원하게 뚫어줄 곳을 찾아봤어.\n네 계좌도 이 풍경만큼 시원하게 뻗어나가길.',
+  청약명당: '좋은 터는 마음을 정갈히 하는 데서 시작되기도 하니까.\n앞으로 살고 싶은 공간을 그려볼 만한 곳을 찾아봤어.\n기다려온 소식이 곧 도착하길.',
+  행운스팟: '이번엔 정말 운이 따라줄지도 몰라.\n가볍게 다녀오기 좋은 곳을 찾아봤어.\n돌아오는 길엔 기분 좋은 일이 기다리고 있기를.',
+  재물체험: '노력한 만큼 값진 걸 얻는다는 말, 은근히 낭만 있지.\n직접 손으로 느껴볼 수 있는 곳을 찾아봤어.\n애쓴 만큼 좋은 결과로 돌아오길.',
+  안정절제: '지금 짊어진 무게, 잠시 내려놓아도 괜찮아.\n마음을 편히 할 수 있는 곳을 찾아봤어.\n걱정보다 여유가 조금씩 더 커지길.',
+};
+
+const GENTLE_LETTER = '그리운 마음, 가만히 안아줄게.\n고요히 걸으며 마음을 전할 수 있는 곳을 찾아봤어.\n그 마음이 잘 전해지기를.';
+const NEGATIVE_LETTER = '그 마음, 다 이해해. 다만 그 마음에 너무 오래 머물진 않았으면 해.\n잠시 다른 곳으로 눈을 돌릴 수 있는 곳을 찾아봤어.\n지금은 너를 먼저 챙길 시간이야.';
+
+// ---------------------------------------------------------------------
+// 세부 의도(sub-intent) 단위 편지 오버라이드 — role보다 더 촘촘한 키워드 매칭.
+// 카테고리·역할 기본 답장보다 우선 적용됨.
+// ---------------------------------------------------------------------
+const SUBINTENT_LETTERS = {
+  '건강·무탈': [
+    { keywords: ['아이가 건강하게', '아이가 컸으면', '자녀가 건강', '아이가 크게', '아이가 자랐으면'],
+      letter: '쑥쑥 자라는 모습만큼 기특한 게 또 있을까.\n달빛처럼 포근한 기운 듬뿍 받아, 건강하고 씩씩하게 자라길 바랄게.' },
+    { keywords: ['키가 컸으면', '키 크고', '키가 크게', '키가 쑥쑥'],
+      letter: '오늘보다 내일 한 뼘 더!\n달도 네 소원이 쑥쑥 자라도록 환하게 비춰줄게.' },
+    { keywords: ['강아지', '고양이', '반려동물', '반려견', '반려묘', '댕댕이', '냥이', '멍멍이'],
+      letter: '매일 반갑게 마주하는 그 시간이 오래오래 계속되길.\n함께하는 날들이 건강하고 행복하게 이어지길 바랄게.' },
+    { keywords: ['부모님', '오래 건강', '장수'],
+      letter: '함께 밥 먹고 웃는 평범한 날들이 오래 이어지길.\n올해도, 내년에도 가족 모두 건강하길 바랄게.' },
+    { keywords: ['체력이', '체력 좋아', '튼튼해지고', '근육'],
+      letter: '하고 싶은 걸 체력 때문에 미루지 않도록!\n몸도 마음도 한층 더 단단해지는 날들이 찾아오길 바랄게.' },
+    { keywords: ['수술', '완쾌', '나았으면'],
+      letter: '지금 가장 바라는 건 별다른 일이 없는 무사한 하루겠지.\n모든 과정이 잘 지나가고 다시 편안한 일상으로 돌아가길 바랄게.' },
+    { keywords: ['아무 일 없', '무탈하게', '사고 없이'],
+      letter: '특별한 일 없이 평온한 하루가 이어지는 것도 큰 복이니까.\n올해 남은 날들도 무탈하게 흘러가길 바랄게.' },
+    { keywords: ['마음이 편해', '마음이 무거운', '마음이 복잡', '편안해졌으면', '편해졌으면'],
+      letter: '복잡했던 마음에도 잠시 쉬어갈 자리가 필요하니까.\n오늘보다 조금 가벼운 마음으로 내일을 맞이하길 바랄게.' },
+  ],
+  '사랑·인연': [
+    { keywords: ['헤어진', '이별', '잊고 싶', '그리워', '미련', '벗어나고', '보고싶', '보고 싶', '다시 만나', '재회', '다시 연락'],
+      letter: '그 마음, 오랫동안 들여다봤을 것 같아.\n이미 지나간 인연은 잠시 놓아주고, 다시 좋은 인연을 찾아보는 건 어떨까.\n지금의 생각은 잠시 내려놓고, 새로운 인연을 맞을 준비를 할 수 있는 곳을 찾아봤어.' },
+  ],
+  '성장·학업': [
+    { keywords: ['성장', '어른', '책임감', '다짐', '변화하고'],
+      letter: '지금의 고민도 분명 너를 조금씩 자라게 하고 있어.\n마음을 다잡고 걸어볼 수 있는 곳을 찾아봤어.' },
+  ],
+  '이직·취업': [
+    { keywords: ['힐링', '숲', '피곤', '지쳐', '지침', '번아웃', '쉬고', '휴식', '스트레스'],
+      letter: '지친 채로는 좋은 선택도 어려운 법이니까.\n잠시 숨 돌리고 다시 나아갈 수 있는 곳을 찾아봤어.' },
+  ],
+  '효도·가족': [
+    { keywords: ['잔소리', '다투지', '싸우지', '피하고 싶'],
+      letter: '가족이니까 더 서운하고, 더 아플 때도 있지.\n잠시 떨어져서 마음을 다독일 수 있는 곳을 찾아봤어.' },
+    { keywords: ['추억', '나들이', '즐겁', '함께 놀'],
+      letter: '함께 웃는 시간, 그 자체로 큰 선물이지.\n온 가족이 다 같이 즐길 수 있는 곳을 찾아봤어.' },
+  ],
+};
+
+function findSubintentLetter(category, wish) {
+  const list = SUBINTENT_LETTERS[category] || [];
+  for (const item of list) {
+    if (item.keywords.some((k) => wish.includes(k))) return item.letter;
+  }
+  return null;
+}
+
+// 부정적(타인 향한 악의) 소원 감지 시 사용할 역할(사찰 일부 + 모험 일부)
+const NEGATIVE_ROLE_PLACES = {
+  마음정화: () => CANDIDATES.filter((c) => c.role === '기원' && ['불국사', '해인사', '정취암', '갓바위', '낙산사', '부석사', '만어사', '화엄사'].some((n) => c['명소명'].includes(n))),
+  도파민체험: () => CANDIDATES.filter((c) => c.role === '운동체력' && ['래프팅', '패러글라이딩', '알파인코스터'].some((n) => c['명소명'].includes(n))),
+};
+
+const NEGATIVE_KEYWORDS = ['벌받', '후회했으면', '망했으면', '불행했으면', '저주'];
+const GRIEF_STRONG = ['돌아가신', '하늘나라', '기일', '제사'];
+const FAMILY_WORDS = ['아버지', '어머니', '엄마', '아빠', '할머니', '할아버지'];
+const CRISIS_KEYWORDS = ['사라지고 싶', '죽고 싶', '그만 살고', '살기 싫', '자살', '목숨을 끊'];
+
+function includesAny(text, arr) { return arr.some((k) => text.includes(k)); }
+function isCrisis(wish) { return includesAny(wish, CRISIS_KEYWORDS); }
+function isGrief(wish) {
+  if (includesAny(wish, GRIEF_STRONG)) return true;
+  if (wish.includes('꿈에') && includesAny(wish, FAMILY_WORDS) && (wish.includes('나오') || wish.includes('보고'))) return true;
+  return false;
+}
+function isNegative(wish) { return includesAny(wish, NEGATIVE_KEYWORDS); }
+
+function isMeaninglessInput(text) {
+  const trimmed = text.trim();
+  if (trimmed.length < 2) return true;
+  const meaningfulChars = (trimmed.match(/[가-힣a-zA-Z0-9]/g) || []).length;
+  const totalChars = trimmed.replace(/\s/g, '').length;
+  if (totalChars === 0) return true;
+  return meaningfulChars / totalChars < 0.5;
+}
+
+function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function pickDistinct(pool, n) {
+  const copy = [...pool];
+  const out = [];
+  while (out.length < n && copy.length > 0) {
+    const idx = Math.floor(Math.random() * copy.length);
+    out.push(copy.splice(idx, 1)[0]);
+  }
+  return out;
+}
+
+
+// =====================================================================
+// v4 FREE ANALYZER
+// 핵심: 카테고리보다 '대상 → 상황 → 바라는 변화 → 적합/부적합 경험'을 먼저 본다.
+// API 도입 시 analyzeWishFree() 하나를 analyzeWishAPI()로 교체하면
+// 아래 추천/렌더링 로직은 그대로 재사용할 수 있게 분리해 둠.
+// =====================================================================
+
+function normalizeKo(text) {
+  return text
+    .toLowerCase()
+    .replace(/[~!@#$%^&*()_+\-=\[\]{};:'",.<>/?\\|`]/g, '')
+    .replace(/\s+/g, '');
+}
+function rx(text, pattern) { return pattern.test(normalizeKo(text)); }
+
+function analyzeWishFree(category, wishRaw) {
+  const w = normalizeKo(wishRaw);
+  const A = {
+    category,
+    subject:'본인',
+    situation:'일반',
+    desiredChange:'소원성취',
+    mood:'기대',
+    preferredRoles:[],
+    avoidRoles:[],
+    confidence:0.45,
+    scenario:'generic',
+    letter:null
+  };
+
+  // A. 출산/태아/임신: 가족체험·고강도 활동을 차단하고 안정/기원 우선.
+  if (/(아기|아이|태아|임신|출산|순산).*(태어나|낳|출산|무사|건강)|무사히태어나|순산/.test(w)) {
+    Object.assign(A,{
+      subject:'태아·출산 예정 가족', situation:'출산을 앞둔 시기',
+      desiredChange:'무사한 출산과 건강', mood:'기대와 걱정',
+      preferredRoles:['마음안정','기원','자연치유'],
+      avoidRoles:['가족체험','운동체력','가벼운활동','인연커뮤니티','로맨틱만남'],
+      confidence:.98, scenario:'prenatal',
+      letter:'새로운 가족을 기다리는 마음에는 설렘과 걱정이 함께 있겠지.\n아이를 건강하게 맞이할 수 있도록 몸과 마음을 차분히 돌보는 시간을 가져봐.\n모든 과정이 평안하게 이어지길 달님도 함께 빌어줄게.'
+    });
+    return A;
+  }
+
+  // B. 사업주가 직원 급여/월급을 걱정하는 상황.
+  if (/(직원|사원|식구|우리회사).*(월급|급여|임금|성과급).*(안밀|밀리지|제때|줄수|지급)|월급안밀/.test(w)) {
+    Object.assign(A,{
+      subject:'직원·회사', situation:'사업 운영과 급여 지급에 대한 책임',
+      desiredChange:'안정적인 사업 운영과 급여 지급', mood:'책임감과 걱정',
+      preferredRoles:['마음안정','기원','자연치유'],
+      avoidRoles:['학업몰입','성찰다짐','가족체험','운동체력'],
+      confidence:.98, scenario:'payroll',
+      letter:'사람들의 생활을 책임지고 있다는 마음이 꽤 무겁겠구나.\n걱정이 앞설수록 잠시 숨을 고르고 마음을 가다듬을 시간도 필요해.\n해야 할 몫을 무사히 해낼 수 있도록 달님도 함께 빌어줄게.'
+    });
+    return A;
+  }
+
+  // C. 현재 함께하는 연인/배우자와 관계를 오래 유지하고 싶은 소원.
+  if (
+    /(남자친구|여자친구|남친|여친|애인|연인|배우자|남편|아내|사랑하는사람)/.test(w) &&
+    /(오래|계속|행복|안싸우|싸우지|별탈없이|무탈|잘지내|평생|함께)/.test(w)
+  ) {
+    Object.assign(A,{
+      subject:'현재 연인·배우자', situation:'이미 이어지고 있는 관계',
+      desiredChange:'관계 지속·평안·좋은 미래', mood:'애정과 바람',
+      preferredRoles:['현재연애지속','마음안정'],
+      avoidRoles:['인연커뮤니티','로맨틱만남','이별회복','자기계발꾸미기'],
+      confidence:.99, scenario:'existing_love',
+      letter:'이미 곁에 소중한 사람이 있구나.\n지금 나누고 있는 마음이 익숙함 속에서도 오래 따뜻하게 이어지길 바라.\n둘이 함께 좋은 시간을 더 쌓아갈 수 있는 곳들을 찾아봤어.'
+    });
+    return A;
+  }
+
+  // D. 짝사랑/고백/상대의 호감을 바라는 관계 진전형.
+  if (/(짝사랑|고백|나를좋아|날좋아|마음이통|사귀고싶|이뤄지지않|이루어지지않|잘되고싶)/.test(w)) {
+    Object.assign(A,{
+      subject:'마음에 둔 상대', situation:'짝사랑·고백 전 관계',
+      desiredChange:'상호 호감·관계 진전', mood:'설렘과 간절함',
+      preferredRoles:['로맨틱만남','인연커뮤니티','운동체력'],
+      avoidRoles:['이별회복','현재연애지속'],
+      confidence:.96, scenario:'unrequited',
+      letter:'마음속에 오래 품어온 사람이 있구나.\n이번에는 바라보기만 하지 말고 한 걸음 가까워질 수 있도록 달님도 용기를 조금 보태줄게.\n둘 사이에 자연스러운 대화와 설렘을 더해줄 곳들을 찾아봤어.'
+    });
+    return A;
+  }
+
+  // E. 키/신체 성장: 한국어 어미와 띄어쓰기 변형까지 정규화해서 감지.
+  if (/(키.*(크|컸|커지|쑥쑥)|쑥쑥.*(자라|컸|크)|키좀)/.test(w)) {
+    Object.assign(A,{
+      subject:'본인·아이', situation:'신체 성장 희망',
+      desiredChange:'건강한 성장', mood:'기대',
+      preferredRoles:['건강식','가벼운활동','자연치유'],
+      avoidRoles:['운동체력'], // 래프팅·패러글라이딩 같은 고강도 후보 차단
+      confidence:.96, scenario:'height_growth',
+      letter:'오늘보다 내일 한 뼘 더, 건강하게 쑥쑥 자라길 바라는 마음이구나.\n잘 먹고 가볍게 몸을 움직이며 튼튼한 하루를 쌓아가보자.\n달님도 건강한 성장을 함께 응원할게.'
+    });
+    return A;
+  }
+
+  // F. 체력 강화: 운동 2 + 건강식 1이 자연스럽게 섞이도록.
+  if (/(체력|기초체력|지구력|튼튼|근육).*(좋|늘|키우|강해)|체력좋|체력늘/.test(w)) {
+    Object.assign(A,{
+      situation:'체력 강화', desiredChange:'활력과 체력 증진',
+      preferredRoles:['운동체력','건강식','가벼운활동'],
+      avoidRoles:[], confidence:.94, scenario:'fitness',
+      letter:'하고 싶은 걸 체력 때문에 미루지 않도록 몸에 힘을 차근차근 채워보자.\n잘 움직이고 잘 먹는 하루가 쌓이면 분명 지금보다 더 단단해질 거야.'
+    });
+    return A;
+  }
+
+  // G. 임금/연봉/성과급/부자/갑부 등 재물 상승형.
+  if (/(월급|연봉|성과급|보너스|봉급|돈|재산|자산|부자|갑부|재벌|금은보화|돈벼락|수입).*(오르|올라|많|받|벌|생기|되|늘)|부자되|갑부되|돈많/.test(w)) {
+    Object.assign(A,{
+      situation:'재물·소득 상승 희망', desiredChange:'수입 증가·풍요',
+      preferredRoles:['재물체험','주식전망','안정절제'],
+      avoidRoles:['학업몰입'], confidence:.95, scenario:'wealth_up',
+      letter:'바라는 숫자가 꽤 시원하게 올라가길 기다리고 있구나.\n이번에는 좋은 기운도 챙기고, 조금은 웃을 수 있는 곳들로 골라봤어.\n통장에도 반가운 변화가 찾아오길!'
+    });
+    return A;
+  }
+
+  // H. 주식·투자.
+  if (/(주식|증시|차트|상한가|우상향|투자)/.test(w)) {
+    Object.assign(A,{
+      situation:'투자 결과 상승 기대', desiredChange:'수익·상승',
+      preferredRoles:['주식전망','재물체험','기원'],
+      avoidRoles:['안정절제'], confidence:.97, scenario:'stocks',
+      letter:'차트를 볼 때마다 마음도 같이 오르락내리락했겠구나.\n이번에는 네가 기다리는 초록불이 길게 이어지길 달님도 같이 빌어볼게.'
+    });
+    return A;
+  }
+
+  // I. 기본 역할 점수: 명확한 상황이 없을 때만 사용.
+  const roles = CATEGORY_ROLES[category] || [];
+  const scored = roles.map(role => ({
+    role,
+    score:(ROLE_KEYWORDS[role]||[]).filter(k => w.includes(normalizeKo(k))).length
+  })).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
+
+  if (scored.length) {
+    A.preferredRoles = scored.slice(0,2).map(x=>x.role);
+    A.confidence = .68;
+    A.scenario = 'keyword_general';
+  } else {
+    // J. 애매하면 추측하지 않고 기원/일출 + 마음안정으로 안전 폴백.
+    A.preferredRoles = ['기원','마음안정'];
+    A.confidence = .30;
+    A.scenario = 'safe_fallback';
+    A.letter = '소원의 뜻을 한 가지로 단정하기보다는, 마음을 차분히 담아 빌 수 있는 곳들을 찾아봤어.\n떠오르는 해와 고요한 풍경 앞에서 네 소원을 다시 한번 마음속에 담아봐.';
+  }
+  return A;
+}
+
+function poolForRole(role) {
+  // 고백설렘은 실제 DB에 양조장/브루어리/와이너리가 있으면 우선 포함하도록 확장 가능.
+  if (role === '인연커뮤니티') {
+    return CANDIDATES.filter(c => c.role === role ||
+      /양조장|브루어리|와이너리|전통주|양조/.test(c['명소명'] + c['원본설명']));
+  }
+  return CANDIDATES.filter(c=>c.role===role);
+}
+
+function candidateAllowed(c, analysis) {
+  return !analysis.avoidRoles.includes(c.role);
+}
+
+function pickScenarioPlaces(analysis, n=3) {
+  const picks=[];
+  const seen=new Set();
+
+  // 역할 순서를 유지하면서 역할별 1개씩 먼저 뽑아 다양성을 확보.
+  for (const role of analysis.preferredRoles) {
+    const pool=poolForRole(role).filter(c=>candidateAllowed(c,analysis) && !seen.has(c['명소명']));
+    if (pool.length) {
+      const p=pickRandom(pool);
+      picks.push(p); seen.add(p['명소명']);
+      if (picks.length>=n) return picks;
+    }
+  }
+
+  // 부족하면 같은 선호 역할의 나머지 후보.
+  const extra=analysis.preferredRoles
+    .flatMap(poolForRole)
+    .filter(c=>candidateAllowed(c,analysis) && !seen.has(c['명소명']));
+  for (const p of pickDistinct(extra,n-picks.length)) {
+    picks.push(p);seen.add(p['명소명']);
+  }
+
+  // 그래도 부족하면 '기원'을 우선 사용. 억지 역할로 채우지 않음.
+  if (picks.length<n) {
+    const prayer=CANDIDATES.filter(c=>c.role==='기원' && !seen.has(c['명소명']));
+    for (const p of pickDistinct(prayer,n-picks.length)) {
+      picks.push(p);seen.add(p['명소명']);
+    }
+  }
+  return picks.slice(0,n);
+}
+
+function personalizedCatch(c, A) {
+  const n=c['명소명'];
+
+  if (A.scenario==='prenatal') {
+    if (n.includes('트리비움')) return '요가와 명상으로 호흡을 고르며, 아이를 맞이할 몸과 마음을 차분히 준비해보세요.';
+    if (c.role==='기원') return '새로운 가족을 기다리는 마음을 담아, 엄마와 아이 모두의 평안을 조용히 빌어보세요.';
+    return '무리하지 않고 천천히 쉬어가며, 아이를 기다리는 마음에 편안한 여백을 만들어보세요.';
+  }
+  if (A.scenario==='payroll') {
+    if (c.role==='기원') return '직원들에게 해야 할 몫을 무사히 지켜낼 수 있기를, 잠시 마음을 가다듬고 빌어보세요.';
+    return '책임감과 걱정이 큰 마음을 잠시 내려놓고, 다시 차분하게 다음 선택을 생각해보세요.';
+  }
+  if (A.scenario==='existing_love') {
+    return '새로운 인연을 찾기보다, 지금 곁에 있는 사람과 천천히 좋은 시간을 더 쌓아보세요.';
+  }
+  if (A.scenario==='unrequited') {
+    if (/양조장|브루어리|와이너리|전통주|양조/.test(n+c['원본설명']))
+      return '달달한 한 잔에 용기를 살짝 빌려, 평소 못했던 마음을 자연스럽게 건네보세요.';
+    if (c.role==='운동체력')
+      return '함께 웃고 두근거릴 만한 체험으로 어색했던 거리부터 조금 가까워져 보세요.';
+    return '좋은 분위기 속에서 대화를 나누며, 마음을 전할 타이밍을 천천히 만들어보세요.';
+  }
+  if (A.scenario==='height_growth') {
+    if (c.role==='건강식') return '쑥쑥 자라려면 잘 먹는 것도 중요하죠. 든든하고 건강한 한 끼로 튼튼한 하루를 채워보세요.';
+    return '잘 먹고 가볍게 움직이는 하루를 쌓으며 건강하게 자랄 힘을 차근차근 채워보세요.';
+  }
+  if (A.scenario==='fitness') {
+    if (c.role==='건강식') return '잘 움직이는 것만큼 잘 먹는 것도 중요하니까요. 든든한 한 끼로 체력을 채워보세요.';
+    return '자연 속에서 몸을 움직이며 체력을 차근차근 끌어올려보세요.';
+  }
+  if (A.scenario==='wealth_up') {
+    if (c.role==='주식전망') return '이번엔 물가 말고 내 수입이 오를 차례! 높은 곳에서 상승 기운부터 챙겨가세요.';
+    if (c.role==='재물체험') return '금은보화가 어디 숨어 있을지 모르니까요. 오늘은 진짜 귀한 것부터 찾아보세요.';
+    if (c.role==='안정절제') return '부자가 되고 싶다고요? 잠시 욕심은 내려놓고 마음만큼은 누구보다 넉넉하게 채워보세요.';
+  }
+  if (A.scenario==='stocks') {
+    if (c.role==='주식전망') return '끝없이 펼쳐지는 전망처럼 내 차트도 시원하게 우상향하길! 높은 곳에서 좋은 기운부터 챙겨가세요.';
+  }
+  return c.catch;
+}
+
+function letterForAnalysis(A) {
+  if (A.letter) return A.letter;
+  if (A.preferredRoles[0] && LETTER_ROLE_OVERRIDE[A.preferredRoles[0]]) return LETTER_ROLE_OVERRIDE[A.preferredRoles[0]];
+  return LETTER_DEFAULT[A.category];
+}
+
+function buildRecommendation(category, wishRaw) {
+  const wish = wishRaw.trim();
+  if (isCrisis(wish)) return { type:'crisis' };
+  if (isGrief(wish)) {
+    const pool=CANDIDATES.filter(c=>c.role==='그리움추모');
+    return {type:'gentle',role:'그리움추모',picks:pickDistinct(pool,3),letter:GENTLE_LETTER};
+  }
+  if (isNegative(wish)) {
+    const pool=[...NEGATIVE_ROLE_PLACES.마음정화(),...NEGATIVE_ROLE_PLACES.도파민체험()];
+    return {type:'normal',role:'mixed',picks:pickDistinct(pool,3),plan:[{role:'마음정화'},{role:'도파민체험'}],letter:NEGATIVE_LETTER,analysis:{scenario:'negative'}};
+  }
+
+  const analysis=analyzeWishFree(category,wish);
+  const picks=pickScenarioPlaces(analysis,3).map(c=>({...c,catch:personalizedCatch(c,analysis)}));
+  return {
+    type:'normal',
+    analysis,
+    plan:analysis.preferredRoles.map(role=>({role,count:1})),
+    detected:analysis.preferredRoles.map(role=>({role,score:analysis.confidence})),
+    fallback:analysis.scenario==='safe_fallback',
+    picks,
+    letter:letterForAnalysis(analysis)
+  };
+}
+
+// ---------------------------------------------------------------------
+// UI 연결
+// ---------------------------------------------------------------------
+
+let selectedCategory = null;
+let lastResult = null;
+
+const chipGrid = document.getElementById('chipGrid');
+CATEGORIES.forEach((cat) => {
+  const el = document.createElement('div');
+  el.className = 'chip';
+  el.textContent = cat;
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.chip').forEach((c) => c.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedCategory = cat;
+    checkReady();
+  });
+  chipGrid.appendChild(el);
+});
+
+const wishText = document.getElementById('wishText');
+const submitBtn = document.getElementById('submitBtn');
+const inputError = document.getElementById('inputError');
+wishText.addEventListener('input', () => { checkReady(); inputError.style.display = 'none'; });
+function checkReady() { submitBtn.disabled = !(selectedCategory && wishText.value.trim().length > 0); }
+
+submitBtn.addEventListener('click', async () => {
+  if (isMeaninglessInput(wishText.value)) { inputError.style.display = 'block'; return; }
+  inputError.style.display = 'none';
+  const wish = wishText.value.trim();
+  submitBtn.disabled = true;
+  const old = submitBtn.textContent;
+  submitBtn.textContent = '달님이 소원을 읽는 중…';
+  inputError.style.color = '';
+  const loadingTimers = [
+    setTimeout(()=>{ submitBtn.textContent='어울리는 명소를 찾는 중…'; }, 1300),
+    setTimeout(()=>{ submitBtn.textContent='달님이 답장을 고르는 중…'; }, 2800)
+  ];
+  try {
+    const resp = await fetch('/api/recommend', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({category:selectedCategory,wish})});
+    const payload = await resp.json();
+    if(!resp.ok) throw new Error(payload?.error || 'API 요청 실패');
+    const result={type:'normal',picks:(payload.picks||[]).slice(0,3),letter:payload.letter,analysis:payload.analysis||{},provider:API_PROVIDER};
+    lastResult={category:selectedCategory,wish,result};
+    document.getElementById('panelInput').style.display='none';
+    document.getElementById('letterBody').textContent=result.letter;
+    document.getElementById('panelLetter').style.display='block';
+    window.scrollTo({top:0,behavior:'smooth'});
+  } catch(err) {
+    inputError.textContent = '달님이 잠깐 길을 잃었어. 한 번만 다시 불러줘!';
+    inputError.style.color = '#F8E3A3';
+    inputError.style.display='block';
+  } finally {
+    loadingTimers.forEach(clearTimeout);
+    submitBtn.disabled=false;
+    submitBtn.textContent=old;
+  }
+});
+
+document.getElementById('openLetterBtn').addEventListener('click', () => {
+  document.getElementById('panelLetter').style.display = 'none';
+  renderResult(lastResult.result);
+  document.getElementById('panelResult').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+function renderResult(result) {
+  const wrap = document.getElementById('resultWrap');
+  if (result.type === 'crisis') {
+    wrap.innerHTML = `
+      <div class="safety-card">
+        <p>지금 많이 힘드신 것 같아요.<br>혼자 견디지 않으셔도 괜찮아요.<br><br>
+        마음이 힘들 때는 <b>1393(자살예방상담전화)</b> 또는 <b>129(보건복지상담센터)</b>로<br>
+        전화하시면 도움을 받으실 수 있어요.</p>
+      </div>
+      <div class="btn-row"><button class="btn btn-ghost" id="restartBtn">처음으로 돌아가기 →</button></div>
+    `;
+    bindRestart();
+    return;
+  }
+
+  let placesHtml = '';
+  result.picks.slice(0,3).forEach((c) => {
+    placesHtml += `
+      <div class="place">
+        <div class="moon-mini">🌕</div>
+        <div class="txt">
+          <h3>${c['명소명']}</h3>
+          <div class="catch">${c.catch}</div>
+        </div>
+      </div>`;
+  });
+
+  wrap.innerHTML = `
+    <div class="headline" style="font-size:14px;color:#F8E3A3;text-align:center;margin-bottom:6px;font-weight:700;">보름달이 당신의 소원에<br>어울리는 행선지를 찾았어요</div>
+    <div class="places-label">달이 골라온 3곳이에요</div>
+    <div class="places">${placesHtml}</div>
+    <div class="again-hint">다른 소원도 몇 번이든 다시 빌어볼 수 있어요.</div>
+    <div class="btn-row"><button class="btn btn-ghost" id="restartBtn">다시 소원 빌기 →</button></div>
+  `;
+  bindRestart();
+}
+
+function bindRestart() {
+  document.getElementById('restartBtn').addEventListener('click', () => {
+    // 테스트 편의를 위해 카테고리 선택은 유지하고, 소원 내용만 초기화
+    wishText.value = '';
+    inputError.style.display = 'none';
+    checkReady();
+    document.getElementById('panelResult').style.display = 'none';
+    document.getElementById('panelLetter').style.display = 'none';
+    document.getElementById('panelInput').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+
+// ---------------------------------------------------------------------
+// 디버그 패널
+// ---------------------------------------------------------------------
+
+function isDevMode() {
+  return new URLSearchParams(location.search).get('debug') === '1' || document.body.dataset.dev === '1';
+}
+
+function renderDebugPanel(last) {
+  const panel = document.getElementById('debugPanel');
+  if (!isDevMode() || !last) { panel.classList.remove('show'); return; }
+  const { category, wish, result } = last;
+
+  let extra = '';
+  if (result.type === 'crisis') {
+    extra = '<div class="drow">위기 신호 감지 → 명소 추천 대신 안내 문구 표시</div>';
+  } else if (result.type === 'gentle') {
+    extra = '<div class="drow">그리움/추모 신호 감지 → 톤 전환(담백체), 그리움추모 역할 전용, 편지도 gentle 버전</div>';
+  } else {
+    const detected = result.detected && result.detected.length
+      ? result.detected.map((d) => `${d.role}(${d.score})`).join(', ')
+      : '없음';
+    extra = `
+      <div class="drow">감지된 역할: ${detected}</div>
+      <div class="drow">폴백 사용 여부: ${result.fallback ? 'YES (안전 폴백)' : 'NO'}</div>
+      <div class="drow">상황 시나리오: ${result.analysis ? result.analysis.scenario : '-'}</div>
+      <div class="drow">대상: ${result.analysis ? result.analysis.subject : '-'}</div>
+      <div class="drow">상황: ${result.analysis ? result.analysis.situation : '-'}</div>
+      <div class="drow">바라는 변화: ${result.analysis ? result.analysis.desiredChange : '-'}</div>
+      <div class="drow">추천 금지 역할: ${result.analysis ? result.analysis.avoidRoles.join(', ') || '없음' : '-'}</div>
+      <div class="drow">분석 확신도: ${result.analysis ? result.analysis.confidence : '-'}</div>
+      <div class="drow">역할 배분: ${(result.plan || []).map((p) => `${p.role}${p.count ? ' x' + p.count : ''}`).join(' + ')}</div>
+    `;
+  }
+
+  panel.innerHTML = `
+    <h3>이번 요청</h3>
+    <div class="drow">카테고리: <b style="color:#fff">${category}</b></div>
+    <div class="drow">소원 원문: "${wish}"</div>
+    <h3>매칭 결과</h3>
+    ${extra}
+  `;
+  panel.classList.add('show');
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'd') {
+    document.body.dataset.dev = document.body.dataset.dev === '1' ? '0' : '1';
+    document.getElementById('debugPanel').classList.toggle('show', isDevMode() && !!lastResult);
+    if (isDevMode() && lastResult) renderDebugPanel(lastResult);
+  }
+});
+
+// 별빛 배경
+const starField = document.getElementById('starField');
+for (let i = 0; i < 50; i++) {
+  const s = document.createElement('span');
+  const size = Math.random() * 2 + 1;
+  s.style.width = size + 'px'; s.style.height = size + 'px';
+  s.style.left = Math.random() * 100 + '%'; s.style.top = Math.random() * 70 + '%';
+  s.style.animationDelay = Math.random() * 3 + 's';
+  starField.appendChild(s);
+}
+
+</script>
+</body>
+</html>
