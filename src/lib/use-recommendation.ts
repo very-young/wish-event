@@ -111,7 +111,12 @@ export function useRecommendation() {
     }, remaining);
   }, []);
 
-  /** 실패·시간초과 후 다시 확인한다 */
+  /**
+   * 실패·시간초과 후 다시 확인한다.
+   *
+   * 서버는 이미 만들어 둔 결과가 있으면 Gemini를 부르지 않고 그것을 돌려준다.
+   * 그래서 생성이 늦게 끝난 경우에도 이 버튼으로 결과를 받을 수 있다.
+   */
   const retry = useCallback(() => {
     const attemptId = startedForRef.current;
     if (!attemptId) return;
@@ -119,5 +124,46 @@ export function useRecommendation() {
     start(attemptId);
   }, [start]);
 
-  return { state, data, start, beginWaiting, retry };
+  /**
+   * 서버에 저장해 둔 결과를 되살린다.
+   *
+   * 재접속해서 지난 결과를 다시 볼 때 쓴다. Gemini를 다시 부르지 않으므로
+   * 처음 봤던 답장과 명소가 그대로 나온다.
+   */
+  const restore = useCallback(
+    (saved: {
+      attemptId: string;
+      letter: string | null;
+      picks: unknown;
+      status: string | null;
+    }) => {
+      window.clearTimeout(timeoutRef.current);
+      /*
+       * 어느 회차의 결과인지 기억해 둔다.
+       * 이 값이 없으면 "다시 확인하기" 버튼이 아무 일도 하지 못한다.
+       */
+      startedForRef.current = saved.attemptId;
+      startedAtRef.current = Date.now();
+
+      if (saved.letter && Array.isArray(saved.picks)) {
+        setData({
+          letter: saved.letter,
+          picks: saved.picks as RecommendPick[],
+        });
+        setState("ready");
+        return;
+      }
+
+      /*
+       * 저장된 결과가 없는 경우다. 두 가지로 나뉜다.
+       *  - 생성 중이던 회차: 아직 만들어지고 있을 수 있다
+       *  - 실패했던 회차: 다시 확인 버튼을 보여준다
+       */
+      setData(null);
+      setState(saved.status === "pending" ? "pending" : "failed");
+    },
+    [],
+  );
+
+  return { state, data, start, beginWaiting, retry, restore };
 }

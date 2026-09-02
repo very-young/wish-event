@@ -10,7 +10,7 @@
  * 공유 링크에 남의 결과가 실릴 여지를 없애기 위한 구조다 (요구사항 1.8).
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { StarField } from "./StarField";
 import { GameCanvas } from "./GameCanvas";
@@ -93,6 +93,17 @@ export function EventFlow() {
    * 결과는 편지 화면에서 쓴다.
    */
   const recommendation = useRecommendation();
+  /*
+   * restore를 콜백에서 쓰기 위해 ref에 담는다.
+   *
+   * recommendation 객체를 의존성에 직접 넣으면 렌더마다 값이 바뀌어
+   * showLastResult가 매번 새로 만들어지고, 그것을 의존하는 효과가
+   * 반복 실행된다. restore 자체는 useCallback으로 고정돼 있다.
+   */
+  const restoreRef = useRef(recommendation.restore);
+  useEffect(() => {
+    restoreRef.current = recommendation.restore;
+  }, [recommendation.restore]);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -185,6 +196,21 @@ export function EventFlow() {
     setPrizeSoldOut(a.status === "success" && !a.serial);
     setSerial(a.serial);
     if (Array.isArray(a.places)) setPlaces(a.places as Place[]);
+
+    /*
+     * 저장해 둔 AI 결과를 되살린다.
+     *
+     * 이 처리가 없으면 재접속했을 때 답장과 명소가 사라진다.
+     * Gemini를 다시 부르지 않는다 — 매번 다른 결과가 나오면
+     * 참여자에게는 "내 결과가 바뀌었다"로 보인다.
+     */
+    restoreRef.current({
+      attemptId: a.attemptId,
+      letter: a.aiLetter,
+      picks: a.aiPicks,
+      status: a.aiStatus,
+    });
+
     setStep("letter");
     return true;
   }, []);

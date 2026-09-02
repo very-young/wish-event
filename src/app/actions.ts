@@ -83,6 +83,15 @@ export interface LastAttemptInfo {
   places: unknown;
   /** 당첨 일련번호. 당첨자만 값이 있다. */
   serial: string | null;
+  /**
+   * AI가 만든 달님의 답장과 명소 3곳.
+   *
+   * 재접속 시 처음 봤던 것과 같은 내용을 보여주기 위해 저장해 둔 값을 읽는다.
+   * Gemini를 다시 부르면 매번 다른 결과가 나와 "내 결과가 바뀌었다"고 느낀다.
+   */
+  aiLetter: string | null;
+  aiPicks: unknown;
+  aiStatus: string | null;
 }
 
 export type LastAttemptResult =
@@ -104,7 +113,9 @@ export async function getLastAttempt(): Promise<LastAttemptResult> {
 
     const { data, error } = await admin
       .from("attempts")
-      .select("id, category, wish_text, status, reached_round, places_shown")
+      .select(
+        "id, category, wish_text, status, reached_round, places_shown, ai_letter, ai_picks, ai_status",
+      )
       .eq("participant_id", userId)
       .neq("status", "in_progress")
       .order("started_at", { ascending: false })
@@ -135,6 +146,9 @@ export async function getLastAttempt(): Promise<LastAttemptResult> {
         reachedRound: (data.reached_round as number) ?? 1,
         places: data.places_shown,
         serial,
+        aiLetter: (data.ai_letter as string | null) ?? null,
+        aiPicks: data.ai_picks,
+        aiStatus: (data.ai_status as string | null) ?? null,
       },
     };
   } catch {
