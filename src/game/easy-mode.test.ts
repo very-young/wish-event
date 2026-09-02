@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { CANONICAL_VIEWPORT, verifyResult, type InputLog } from "./replay";
+import {
+  verifyResult,
+  type InputLog,
+  type ShotRecord,
+} from "./replay";
 import { PHYSICS, TOTAL_ROUNDS, moonRadius } from "./config";
 
 /**
@@ -32,11 +36,11 @@ describe("서버 검증은 난이도 완화를 인정하지 않는다", () => {
      * 달 반지름 바로 밖을 스치는 발사를 찾는다.
      * 실제 크기로는 빗나가지만 2배 크기라면 맞을 위치다.
      */
-    let borderline: { angle: number; power: number } | null = null;
+    let borderline: ShotRecord | null = null;
 
     for (let deg = -175; deg <= -5 && !borderline; deg += 1) {
       for (let p = 0.2; p <= 1.0; p += 0.01) {
-        const shot = {
+        const shot: ShotRecord = {
           tick: 0,
           angle: (deg * Math.PI) / 180,
           power: PHYSICS.maxPull * p,
