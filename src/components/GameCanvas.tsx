@@ -21,9 +21,20 @@ import { TOTAL_ROUNDS } from "@/game/config";
 export interface GameCanvasProps {
   roundSeeds: readonly number[];
   onEnd(success: boolean, log: InputLog): void;
+  /**
+   * 달을 크고 느리게 만든다. 테스트 페이지 전용.
+   *
+   * ⚠️ 실제 참여 화면에서는 넘기지 않는다. 이 값이 켜진 플레이는
+   *    서버 재현 검증을 통과하지 못한다.
+   */
+  easyMode?: boolean;
 }
 
-export function GameCanvas({ roundSeeds, onEnd }: GameCanvasProps) {
+export function GameCanvas({
+  roundSeeds,
+  onEnd,
+  easyMode = false,
+}: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<GameEngine | null>(null);
 
@@ -93,6 +104,7 @@ export function GameCanvas({ roundSeeds, onEnd }: GameCanvasProps) {
       roundSeeds,
       events,
       reducedMotion,
+      easyMode,
     });
     engineRef.current = engine;
 
@@ -110,7 +122,7 @@ export function GameCanvas({ roundSeeds, onEnd }: GameCanvasProps) {
       engine.stop();
       engineRef.current = null;
     };
-  }, [roundSeeds]);
+  }, [roundSeeds, easyMode]);
 
   /** 이벤트 좌표를 가상 좌표로 변환 */
   const toGamePos = useCallback((clientX: number, clientY: number): Vec2 => {

@@ -84,7 +84,19 @@ export interface EngineOptions {
   events?: EngineEvents;
   /** 동작 축소 설정. 연출 시간을 줄인다 (요구사항 14.9) */
   reducedMotion?: boolean;
+  /**
+   * 달을 크고 느리게 만든다. 테스트 페이지 전용.
+   *
+   * ⚠️ 실제 참여 화면에서는 절대 켜지 않는다. 라운드 3 난이도는
+   *    당첨자 수를 억제하는 장치다 (요구사항 8.18).
+   *    이 값이 켜진 플레이는 서버 검증을 통과하지 못한다.
+   */
+  easyMode?: boolean;
 }
+
+/** 테스트용 완화 배율. 달을 두 배 크게, 절반 속도로 만든다. */
+const EASY_MOON_SCALE = 2.0;
+const EASY_SPEED_SCALE = 0.5;
 
 /** 연출 대기 시간(스텝 단위, 60fps 기준) */
 const HIT_DELAY_STEPS = 96; // 약 1.6초
@@ -97,6 +109,8 @@ export class GameEngine {
   private readonly seeds: readonly number[];
   private readonly events: EngineEvents;
   private readonly reducedMotion: boolean;
+  /** 테스트용 난이도 완화. 실제 참여에서는 항상 false다. */
+  private readonly easyMode: boolean;
 
   /**
    * 시뮬레이션용 화면 크기. 항상 기준 크기로 고정한다.
@@ -153,6 +167,7 @@ export class GameEngine {
     this.seeds = opts.roundSeeds;
     this.events = opts.events ?? {};
     this.reducedMotion = opts.reducedMotion ?? false;
+    this.easyMode = opts.easyMode ?? false;
     this.moonPath = createMoonPath(1, this.seeds[0] ?? 0);
   }
 
@@ -193,6 +208,17 @@ export class GameEngine {
 
   getMissCount(): number {
     return this.missCount;
+  }
+
+  /**
+   * 판정에 쓰는 달 반지름.
+   *
+   * 테스트 모드에서는 크게 만들어 맞추기 쉽게 한다.
+   * 서버는 실제 크기로 재현하므로, 완화된 플레이는 서버 검증을 통과하지 못한다.
+   */
+  private moonR(): number {
+    const base = moonRadius(this.round);
+    return this.easyMode ? base * EASY_MOON_SCALE : base;
   }
 
   // ---------- 라운드 진행 ----------
@@ -321,7 +347,7 @@ export class GameEngine {
     const outcome = evaluateStep(
       this.plane,
       moonPos,
-      moonRadius(this.round),
+      this.moonR(),
       this.obstacles,
       this.vp,
     );
@@ -335,9 +361,17 @@ export class GameEngine {
     }
   }
 
-  /** 달의 현재 위치. 명중 후에는 멈춘 위치를 유지한다. */
+  /**
+   * 달의 현재 위치. 명중 후에는 멈춘 위치를 유지한다.
+   *
+   * 테스트 모드에서는 tick을 천천히 흘려 달을 느리게 만든다.
+   */
   private currentMoonPos(): Vec2 {
-    return this.frozenMoon ?? moonPosition(this.moonPath, this.tick);
+    if (this.frozenMoon) return this.frozenMoon;
+    const t = this.easyMode
+      ? Math.floor(this.tick * EASY_SPEED_SCALE)
+      : this.tick;
+    return moonPosition(this.moonPath, t);
   }
 
   private onHit(moonPos: Vec2): void {
@@ -441,7 +475,7 @@ export class GameEngine {
 
     return {
       moon,
-      moonRadius: moonRadius(this.round),
+      moonRadius: this.moonR(),
       plane,
       planeRadius: PLANE.radius,
       obstacles: this.obstacles,
