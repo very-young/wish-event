@@ -44,6 +44,8 @@ export function WriteScreen({
         return MODERATION.bannedWord;
       case "personalInfo":
         return MODERATION.personalInfo;
+      case "notAWish":
+        return MODERATION.notAWish;
       default:
         return null;
     }

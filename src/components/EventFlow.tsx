@@ -355,7 +355,9 @@ export function EventFlow() {
           showToast(
             submitted.detail === "personalInfo"
               ? MODERATION.personalInfo
-              : MODERATION.bannedWord,
+              : submitted.detail === "notAWish"
+                ? MODERATION.notAWish
+                : MODERATION.bannedWord,
           );
         } else {
           showToast("소원을 저장할 수 없어요. 다시 시도해 주세요.");

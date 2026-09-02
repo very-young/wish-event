@@ -55,6 +55,8 @@ export const MODERATION = {
   bannedWord: "적절하지 않은 표현이 있어요. 다시 적어주세요.",
   personalInfo:
     "연락처나 주소는 담을 수 없어요. 소원 내용만 적어주세요.",
+  /** 숫자만, 같은 글자 반복 등 소원으로 볼 수 없는 입력 */
+  notAWish: "달님에게 전할 소원을 문장으로 적어주세요.",
 } as const;
 
 export const FOLD_SCREEN = {

@@ -12,7 +12,9 @@ export type RejectReason =
   | "tooShort"
   | "tooLong"
   | "bannedWord"
-  | "personalInfo";
+  | "personalInfo"
+  /** 소원으로 볼 수 없는 입력 (숫자만, 같은 글자 반복 등) */
+  | "notAWish";
 
 export type CheckResult =
   | { ok: true }
@@ -62,6 +64,64 @@ function normalize(text: string): string {
     .replace(/[^\p{L}\p{N}]/gu, "");
 }
 
+/**
+ * 소원으로 볼 수 없는 입력인지 판정한다.
+ *
+ * 목적은 "1234", "ㅋㅋㅋㅋ" 처럼 명백히 내용이 없는 입력을 되돌리는 것이다.
+ * 문장 형태를 갖춘 입력은 통과시킨다 — 내용의 진심 여부는 규칙으로
+ * 판단할 수 없고, 무리하게 막으면 정상 소원이 거부된다.
+ *
+ * 소원은 본인만 보므로 과하게 막는 쪽이 더 손해다.
+ */
+function looksNotLikeWish(text: string): boolean {
+  const t = text.trim();
+
+  // 글자(한글·영문)를 뺀 나머지
+  const letters = t.replace(/[^\p{L}]/gu, "");
+
+  // 1) 글자가 하나도 없다: "1234", "....", "?!?!"
+  if (letters.length === 0) return true;
+
+  /*
+   * 2) 완성되지 않은 한글만 있다: "ㅇㅇㅇ", "ㅠㅠㅠ", "ㅎㅎ"
+   *    자음·모음 낱자만으로는 뜻을 전할 수 없다.
+   */
+  const hasCompleteHangul = /[가-힣]/.test(t);
+  const hasLatinWord = /[a-z]{2,}/i.test(t);
+  const onlyJamo = /^[\u3131-\u318E\s\p{P}\p{S}\d]+$/u.test(t);
+  if (onlyJamo && !hasCompleteHangul) return true;
+
+  /*
+   * 3) 같은 글자만 반복한다: "아아아아", "ㅋㅋㅋㅋ", "하하하하"
+   *    서로 다른 글자가 2종류 이하면 뜻을 이루기 어렵다.
+   */
+  const uniqueLetters = new Set(letters).size;
+  if (letters.length >= 4 && uniqueLetters <= 2) return true;
+
+  /*
+   * 4) 뜻을 이룰 글자가 너무 적다.
+   *    완성된 한글도, 두 글자 이상 영단어도 없는 경우다.
+   */
+  if (!hasCompleteHangul && !hasLatinWord) return true;
+
+  // 5) 키보드를 훑어 적은 경우
+  const compact = normalize(t);
+  const KEYBOARD_RUNS = [
+    "qwerty",
+    "asdf",
+    "zxcv",
+    "1234",
+    "ㅁㄴㅇㄹ",
+    "ㅂㅈㄷㄱ",
+    "ㅋㅌㅊㅍ",
+  ];
+  for (const run of KEYBOARD_RUNS) {
+    if (compact.includes(run)) return true;
+  }
+
+  return false;
+}
+
 export function checkWishText(raw: string): CheckResult {
   const trimmed = raw.trim();
 
@@ -90,6 +150,11 @@ export function checkWishText(raw: string): CheckResult {
     if (lowered.includes(word) || (nw.length > 0 && normalized.includes(nw))) {
       return { ok: false, reason: "bannedWord" };
     }
+  }
+
+  // 소원으로 볼 수 없는 입력을 되돌린다
+  if (looksNotLikeWish(trimmed)) {
+    return { ok: false, reason: "notAWish" };
   }
 
   return { ok: true };
