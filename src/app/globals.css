@@ -934,7 +934,13 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100%;
-  padding: 20px 0;
+  /*
+   * 아래를 넉넉히 둔다.
+   *
+   * 마지막 공유 버튼이 화면 끝에 붙어 답답해 보였다.
+   * 모바일에서는 브라우저 하단 막대와도 겹쳐 보인다.
+   */
+  padding: 20px 0 44px;
 }
 
 .letter-outer > * {
@@ -1050,6 +1056,8 @@ body {
 
 .letter-actions {
   margin-top: 24px;
+  /* 버튼 사이 간격. 기본(12px)보다 넓혀 빽빽해 보이지 않게 한다 */
+  gap: 16px;
 }
 
 .share-prompt {
@@ -1066,6 +1074,8 @@ body {
   color: var(--text-dim);
   text-align: center;
   opacity: 0.8;
+  /* 화면 맨 아래 요소이므로 아래 숨통을 준다 */
+  margin-bottom: 8px;
 }
 
 /* ---------- 토스트 ---------- */

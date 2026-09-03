@@ -287,10 +287,13 @@ export function LetterScreen({
 
             <div className="bottom letter-actions fade-in">
               {/*
-                네이버폼은 성공·실패와 무관하게 모두에게 열어준다 (기획 결정).
-                일련번호는 당첨자만 받으므로 폼 제출에 번호가 필요 없다.
+                네이버폼은 성공·실패와 무관하게 열어준다 (기획 결정).
+
+                단, 경품이 소진된 경우는 제출할 대상이 없으므로 잠근다.
+                제출해도 받을 경품이 없는데 버튼이 열려 있으면
+                참여자가 기대를 품게 된다.
               */}
-              {WINNER_FORM_URL ? (
+              {WINNER_FORM_URL && !prizeSoldOut ? (
                 <a
                   className="btn"
                   href={WINNER_FORM_URL}
@@ -300,7 +303,7 @@ export function LetterScreen({
                   {WINNER.formButton}
                 </a>
               ) : (
-                // 링크가 준비되기 전에는 비활성 상태로 자리를 유지한다
+                // 링크가 없거나 경품이 소진된 경우
                 <button type="button" className="btn" disabled>
                   {WINNER.formButton}
                 </button>
