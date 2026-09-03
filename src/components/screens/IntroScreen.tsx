@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 import { MoonCharacter } from "../MoonCharacter";
-import { COMMON, INTRO, PRIVACY } from "@/content/copy";
+import { COMMON, INTRO } from "@/content/copy";
 import { EVENT_PERIOD } from "@/content/settings";
 
 export interface IntroScreenProps {
@@ -17,8 +17,6 @@ export interface IntroScreenProps {
   /** 로그인 상태에 따라 버튼 문구가 달라진다 */
   signedIn?: boolean;
   onStart(): void;
-  /** 개인정보 안내 열기 (요구사항 2.6) */
-  onOpenPrivacy?(): void;
   /** 로그아웃 (요구사항 2.7). 로그인 상태에서만 전달된다 */
   onLogout?(): void;
   /**
@@ -44,7 +42,6 @@ export function IntroScreen({
   busy = false,
   signedIn = false,
   onStart,
-  onOpenPrivacy,
   onLogout,
   requireAgeCheck = false,
 }: IntroScreenProps) {
@@ -117,18 +114,17 @@ export function IntroScreen({
               : INTRO.startButton}
         </button>
 
-        <div className="intro-links">
-          {onOpenPrivacy && (
-            <button type="button" className="btn-text" onClick={onOpenPrivacy}>
-              {PRIVACY.linkLabel}
-            </button>
-          )}
-          {onLogout && (
+        {/*
+          개인정보 안내 링크는 두지 않는다 (기획 결정).
+          카카오 로그인 동의와 네이버폼 제출 시 동의로 갈음한다.
+        */}
+        {onLogout && (
+          <div className="intro-links">
             <button type="button" className="btn-text" onClick={onLogout}>
               {COMMON.logout}
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </section>
   );

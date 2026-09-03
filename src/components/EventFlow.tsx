@@ -23,7 +23,7 @@ import { CelebrateScreen } from "./screens/CelebrateScreen";
 import { LetterScreen } from "./screens/LetterScreen";
 import { BlockedScreen } from "./screens/BlockedScreen";
 import type { CategoryId, Place } from "@/content/categories";
-import { BLOCKED, COMMON, MODERATION, PRIVACY, RETRY_SHARE } from "@/content/copy";
+import { BLOCKED, COMMON, MODERATION, RETRY_SHARE } from "@/content/copy";
 import type { InputLog } from "@/game/replay";
 import { primeAudio } from "@/lib/sfx";
 import { loadKakao, shareForRetry, shareInvite } from "@/lib/kakao";
@@ -86,7 +86,6 @@ export function EventFlow() {
 
   const [waitingShare, setWaitingShare] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const [showPrivacy, setShowPrivacy] = useState(false);
 
   /*
    * AI 추천. 종이접기 시점에 요청을 시작해 게임하는 동안 뒤에서 생성한다.
@@ -548,6 +547,10 @@ export function EventFlow() {
     <main className="stage">
       <StarField />
 
+      {/*
+        개인정보 안내 링크는 두지 않는다 (기획 결정).
+        카카오 로그인 동의와 네이버폼 제출 시 동의로 갈음한다.
+      */}
       <IntroScreen
         active={step === "intro"}
         // 로그인 직후 자동 진행 중에도 버튼을 잠가 중복 클릭을 막는다
@@ -556,7 +559,6 @@ export function EventFlow() {
         // 로그인 전에만 확인한다. 이미 로그인했다면 앞서 확인한 것이다.
         requireAgeCheck={!signedIn}
         onStart={handleStart}
-        onOpenPrivacy={() => setShowPrivacy(true)}
         onLogout={signedIn ? handleLogout : undefined}
       />
 
@@ -627,30 +629,6 @@ export function EventFlow() {
           onGranted={handleShareGranted}
           onCancel={handleShareCancel}
         />
-      )}
-
-      {showPrivacy && (
-        <div
-          className="modal-backdrop"
-          role="dialog"
-          aria-modal="true"
-          aria-label={PRIVACY.linkLabel}
-        >
-          <div className="modal-card">
-            <h2 className="title-md">{PRIVACY.linkLabel}</h2>
-            <p className="lead" style={{ marginTop: 14 }}>
-              {PRIVACY.body}
-            </p>
-            <button
-              type="button"
-              className="btn ghost"
-              style={{ marginTop: 20 }}
-              onClick={() => setShowPrivacy(false)}
-            >
-              {COMMON.close}
-            </button>
-          </div>
-        </div>
       )}
 
       {toast && <div className="toast">{toast}</div>}
