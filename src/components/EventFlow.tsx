@@ -61,13 +61,6 @@ export function EventFlow() {
 
   const [signedIn, setSignedIn] = useState(false);
   const [nickname, setNickname] = useState("");
-  /**
-   * 로그인 여부를 아직 확인하는 중인지.
-   *
-   * 세션 확인은 서버에 물어보므로 1~2초 걸린다. 그동안 버튼을 열어두면
-   * 눌러도 아무 일이 없어 멈춘 것처럼 보인다.
-   */
-  const [checkingSession, setCheckingSession] = useState(true);
   /** 로그인 콜백으로 돌아온 직후인지. 자동으로 다음 화면으로 넘긴다. */
   const [justLoggedIn, setJustLoggedIn] = useState(false);
   /**
@@ -148,10 +141,6 @@ export function EventFlow() {
          * 참여를 마친 사람은 결과 화면으로 되돌려보낸다 (요구사항 13.9, 13.10).
          */
         if (login !== "ok") setShouldResume(true);
-      })
-      .finally(() => {
-        // 확인이 끝나면 버튼을 연다. 실패해도 열어야 참여가 막히지 않는다.
-        setCheckingSession(false);
       });
 
     if (login === "cancelled" || login === "failed") {
@@ -266,7 +255,18 @@ export function EventFlow() {
     primeAudio();
 
     if (!signedIn) {
-      // 카카오 로그인으로 이동 (요구사항 2.1, 2.4)
+      /*
+       * 카카오 로그인으로 이동한다 (요구사항 2.1, 2.4).
+       *
+       * 카카오로 갔다 오는 데 1~2초 걸린다. 특히 이미 동의한 사람은
+       * 동의 화면 없이 즉시 되돌아오는데, 그동안 버튼에 아무 표시가 없어
+       * 멈춘 것처럼 보였다. 그래서 누른 즉시 대기 상태로 바꾼다.
+       *
+       * 이동에 성공하면 페이지가 떠나므로 이 값을 되돌릴 필요가 없다.
+       * 실패했을 때만 되돌린다.
+       */
+      setBusy(true);
+
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "kakao",
@@ -282,7 +282,11 @@ export function EventFlow() {
           scopes: "profile_nickname",
         },
       });
-      if (error) showToast("로그인을 시작할 수 없어요. 다시 시도해 주세요.");
+
+      if (error) {
+        setBusy(false);
+        showToast("로그인을 시작할 수 없어요. 다시 시도해 주세요.");
+      }
       return;
     }
 
@@ -568,8 +572,6 @@ export function EventFlow() {
         active={step === "intro"}
         // 로그인 직후 자동 진행 중에도 버튼을 잠가 중복 클릭을 막는다
         busy={busy || justLoggedIn}
-        // 세션 확인 중에는 버튼을 잠근다. 눌러도 반응이 없어 멈춘 듯 보였다.
-        checkingSession={checkingSession}
         signedIn={signedIn}
         // 로그인 전에만 확인한다. 이미 로그인했다면 앞서 확인한 것이다.
         requireAgeCheck={!signedIn}
