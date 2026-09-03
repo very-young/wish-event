@@ -1560,3 +1560,22 @@ body {
     }
   }
 }
+
+/* ---------- 로그인 후 돌아온 직후 대기 화면 ---------- */
+
+/*
+ * 카카오에서 돌아와 참여 자격을 확인하는 짧은 순간에 보인다.
+ * 인트로를 그대로 두면 버튼 문구가 연달아 바뀌어 어수선했다.
+ */
+.returning-wrap {
+  flex: 1;
+  justify-content: center;
+  gap: 26px;
+}
+
+.returning-text {
+  font-family: var(--font-gowun-batang), serif;
+  font-size: 17px;
+  color: #fff;
+  text-align: center;
+}

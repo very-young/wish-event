@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { StarField } from "./StarField";
+import { MoonCharacter } from "./MoonCharacter";
 import { GameCanvas } from "./GameCanvas";
 import { ShareWaitOverlay } from "./ShareWaitOverlay";
 import { IntroScreen } from "./screens/IntroScreen";
@@ -23,7 +24,13 @@ import { CelebrateScreen } from "./screens/CelebrateScreen";
 import { LetterScreen } from "./screens/LetterScreen";
 import { BlockedScreen } from "./screens/BlockedScreen";
 import type { CategoryId, Place } from "@/content/categories";
-import { BLOCKED, COMMON, MODERATION, RETRY_SHARE } from "@/content/copy";
+import {
+  BLOCKED,
+  COMMON,
+  INTRO,
+  MODERATION,
+  RETRY_SHARE,
+} from "@/content/copy";
 import type { InputLog } from "@/game/replay";
 import { primeAudio } from "@/lib/sfx";
 import { loadKakao, shareForRetry, shareInvite } from "@/lib/kakao";
@@ -40,6 +47,8 @@ import {
 
 type Step =
   | "intro"
+  /** 카카오에서 돌아온 직후. 인트로를 감추고 대기 화면만 보여준다. */
+  | "returning"
   | "blocked"
   | "category"
   | "write"
@@ -152,8 +161,19 @@ export function EventFlow() {
     }
 
     if (login === "ok") {
-      // 로그인 직후에는 소원 작성까지 자동으로 이어준다
-      window.setTimeout(() => setJustLoggedIn(true), 0);
+      /*
+       * 로그인 직후에는 소원 유형 선택까지 자동으로 이어준다.
+       *
+       * 이때 인트로를 보여주지 않는다. 카카오에서 돌아오면 페이지가 새로
+       * 열리므로 인트로가 잠깐 보이고, 그 사이 버튼 문구가
+       * "카카오로 시작하기" → "소원 빌러 가기" → "잠시만 기다려 주세요"로
+       * 연달아 바뀌어 어수선했다.
+       */
+      // 다음 프레임으로 미뤄 렌더 중 상태 변경을 피한다
+      window.setTimeout(() => {
+        setStep("returning");
+        setJustLoggedIn(true);
+      }, 0);
     }
 
     if (login) {
@@ -222,6 +242,13 @@ export function EventFlow() {
       const state = await getPlayState();
       if (!state.ok) {
         showToast("상태를 확인할 수 없어요. 다시 시도해 주세요.");
+        /*
+         * 인트로로 되돌려 다시 시도할 수 있게 한다.
+         *
+         * 로그인 후 돌아온 직후라면 대기 화면에 있는데, 그대로 두면
+         * 아무것도 할 수 없는 화면에 갇힌다.
+         */
+        setStep("intro");
         return;
       }
       if (state.eventStatus !== "open") {
@@ -312,6 +339,23 @@ export function EventFlow() {
 
     return () => window.clearTimeout(t);
   }, [justLoggedIn, signedIn, proceedToCategory]);
+
+  /*
+   * 대기 화면에 갇히는 것을 막는 안전장치.
+   *
+   * 로그인 후 돌아왔는데 세션 확인이 실패하면 위 효과가 실행되지 않아
+   * 대기 화면에 계속 머문다. 일정 시간이 지나면 인트로로 되돌린다.
+   */
+  useEffect(() => {
+    if (step !== "returning") return;
+
+    const t = window.setTimeout(() => {
+      // 그 사이에 진행됐으면 건드리지 않는다
+      setStep((s) => (s === "returning" ? "intro" : s));
+    }, 8000);
+
+    return () => window.clearTimeout(t);
+  }, [step]);
 
   /*
    * 이미 로그인된 상태로 다시 들어온 경우, 참여를 마친 사람은
@@ -563,6 +607,26 @@ export function EventFlow() {
   return (
     <main className="stage">
       <StarField />
+
+      {/*
+        카카오에서 돌아온 직후 보여주는 대기 화면.
+
+        인트로를 그대로 두면 버튼 문구가 연달아 바뀌며 어수선해 보인다.
+        달과 별은 그대로 두어 같은 페이지에 있는 느낌을 유지한다.
+      */}
+      {step === "returning" && (
+        <section className="screen" data-active="true">
+          <div className="center-col returning-wrap">
+            <MoonCharacter size={110} float craters />
+            <p className="returning-text">{INTRO.preparing}</p>
+            <div className="ll-dots" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </div>
+          </div>
+        </section>
+      )}
 
       {/*
         개인정보 안내 링크는 두지 않는다 (기획 결정).
