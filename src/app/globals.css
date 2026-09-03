@@ -1405,3 +1405,71 @@ body {
   white-space: pre-line;
   text-align: center;
 }
+
+/* ---------- 명소 카드 링크 ---------- */
+
+/*
+ * 만끽지도로 이동하는 명소 카드.
+ * 누를 수 있다는 것이 보이도록 화살표와 눌림 효과를 준다.
+ */
+.place-link {
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.place-link:active {
+  transform: scale(0.98);
+}
+
+.place-link:hover {
+  background: rgba(232, 201, 121, 0.1);
+  border-color: rgba(232, 201, 121, 0.35);
+}
+
+.place-link:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* 이동 표시 화살표. 링크가 있는 카드에만 나온다. */
+.place-go {
+  margin-left: auto;
+  padding-left: 6px;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--gold);
+  flex-shrink: 0;
+}
+
+/* ---------- 만 14세 이상 확인 ---------- */
+
+.age-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-size: 14px;
+  color: var(--text-soft);
+  cursor: pointer;
+  /* 손가락으로 누르기 쉽게 여유를 준다 */
+  padding: 6px 4px;
+}
+
+.age-check input {
+  width: 19px;
+  height: 19px;
+  accent-color: var(--gold);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.age-warning {
+  font-size: 13px;
+  color: #ffb4a2;
+  text-align: center;
+  margin-top: -4px;
+}

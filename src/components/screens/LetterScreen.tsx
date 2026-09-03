@@ -15,6 +15,7 @@ import {
   WINNER,
 } from "@/content/copy";
 import { WINNER_FORM_URL } from "@/content/settings";
+import { getSpotLink } from "@/content/spot-links";
 import { LetterLoading } from "../LetterLoading";
 import type { RecommendState } from "@/lib/use-recommendation";
 import type { RecommendPick } from "@/lib/recommend/engine";
@@ -84,6 +85,8 @@ export function LetterScreen({
           name: p["명소명"],
           description: p.catch,
           emoji: cat?.emoji ?? "🌙",
+          // 만끽지도 상세 페이지로 연결한다. 없으면 링크 없이 표시된다.
+          link: getSpotLink(p["명소명"]) ?? undefined,
         }))
       : null;
 
@@ -212,22 +215,51 @@ export function LetterScreen({
             <div style={{ marginTop: 26 }} className="fade-in">
               <div className="eyebrow">{LETTER.placesEyebrow}</div>
               <div className="place-list">
-                {shownPlaces.map((p, i) => (
-                  <div className="place" key={i}>
-                    <div className="place-pic" aria-hidden="true">
-                      {p.image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={p.image} alt="" />
-                      ) : (
-                        p.emoji
+                {shownPlaces.map((p, i) => {
+                  const inner = (
+                    <>
+                      <div className="place-pic" aria-hidden="true">
+                        {p.image ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={p.image} alt="" />
+                        ) : (
+                          p.emoji
+                        )}
+                      </div>
+                      <div className="place-info">
+                        <h3>{p.name}</h3>
+                        <p>{p.description}</p>
+                      </div>
+                      {p.link && (
+                        <span className="place-go" aria-hidden="true">
+                          ›
+                        </span>
                       )}
+                    </>
+                  );
+
+                  /*
+                   * 링크가 있으면 만끽지도로 이동한다.
+                   * 없으면 그냥 정보만 보여준다 — 누를 수 없다는 것이
+                   * 보이도록 화살표도 표시하지 않는다.
+                   */
+                  return p.link ? (
+                    <a
+                      key={i}
+                      className="place place-link"
+                      href={p.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`${p.name} 자세히 보기`}
+                    >
+                      {inner}
+                    </a>
+                  ) : (
+                    <div className="place" key={i}>
+                      {inner}
                     </div>
-                    <div className="place-info">
-                      <h3>{p.name}</h3>
-                      <p>{p.description}</p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
             )}

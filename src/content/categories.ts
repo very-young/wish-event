@@ -27,6 +27,13 @@ export interface Place {
   image?: string;
   /** 이미지가 없을 때 쓰는 대체 아이콘 */
   emoji: string;
+  /**
+   * 만끽지도 상세 페이지 주소.
+   *
+   * 없으면 화면은 링크 없이 이름만 보여준다.
+   * 결과를 저장할 때 함께 넣어두므로 재접속 시에도 유지된다.
+   */
+  link?: string;
 }
 
 export interface Category {

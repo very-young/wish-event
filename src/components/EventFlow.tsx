@@ -553,6 +553,8 @@ export function EventFlow() {
         // 로그인 직후 자동 진행 중에도 버튼을 잠가 중복 클릭을 막는다
         busy={busy || justLoggedIn}
         signedIn={signedIn}
+        // 로그인 전에만 확인한다. 이미 로그인했다면 앞서 확인한 것이다.
+        requireAgeCheck={!signedIn}
         onStart={handleStart}
         onOpenPrivacy={() => setShowPrivacy(true)}
         onLogout={signedIn ? handleLogout : undefined}
