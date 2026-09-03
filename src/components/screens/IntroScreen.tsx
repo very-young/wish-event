@@ -14,6 +14,13 @@ export interface IntroScreenProps {
   active: boolean;
   /** 처리 중이면 버튼을 잠근다 */
   busy?: boolean;
+  /**
+   * 로그인 여부를 확인하는 중인지.
+   *
+   * 확인이 끝나기 전에는 버튼을 잠근다. 그러지 않으면 이미 로그인한
+   * 사람이 눌렀을 때 아무 일도 일어나지 않아 멈춘 것처럼 보인다.
+   */
+  checkingSession?: boolean;
   /** 로그인 상태에 따라 버튼 문구가 달라진다 */
   signedIn?: boolean;
   onStart(): void;
@@ -40,6 +47,7 @@ function formatPeriod(): string {
 export function IntroScreen({
   active,
   busy = false,
+  checkingSession = false,
   signedIn = false,
   onStart,
   onLogout,
@@ -105,13 +113,22 @@ export function IntroScreen({
           type="button"
           className={signedIn ? "btn" : "btn btn-kakao"}
           onClick={onStart}
-          disabled={busy || blockedByAge}
+          disabled={busy || blockedByAge || checkingSession}
         >
-          {busy
-            ? COMMON.loading
-            : signedIn
-              ? INTRO.startButtonSignedIn
-              : INTRO.startButton}
+          {/*
+            기다리는 중에는 회전 표시와 함께 알린다.
+            버튼만 잠그면 왜 눌리지 않는지 알 수 없다.
+          */}
+          {busy || checkingSession ? (
+            <span className="btn-loading">
+              <i className="btn-spinner" aria-hidden="true" />
+              {checkingSession ? INTRO.checkingSession : COMMON.loading}
+            </span>
+          ) : signedIn ? (
+            INTRO.startButtonSignedIn
+          ) : (
+            INTRO.startButton
+          )}
         </button>
 
         {/*

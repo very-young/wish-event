@@ -11,6 +11,8 @@ export const INTRO = {
   lead: "오늘 밤, 당신의 소원을 종이비행기에 실어\n저에게 날려 보내주세요.",
   startButton: "카카오로 시작하기",
   startButtonSignedIn: "소원 빌러 가기",
+  /** 로그인 여부를 확인하는 동안 버튼에 보여준다 */
+  checkingSession: "로그인 확인 중…",
   periodLabel: "이벤트 기간",
   /*
    * 만 14세 미만은 참여할 수 없다 (기획 결정).
