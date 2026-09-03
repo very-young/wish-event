@@ -398,6 +398,16 @@ body {
 .btn:disabled {
   opacity: 0.4;
   cursor: default;
+  /* 꺼진 상태에서는 빛나는 그림자도 없앤다 */
+  box-shadow: none;
+}
+
+/* 체크하면 버튼에 불이 들어오듯 살아난다 */
+.btn:not(:disabled) {
+  transition:
+    opacity 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.15s ease;
 }
 
 .btn.ghost {
@@ -1467,9 +1477,7 @@ body {
   flex-shrink: 0;
 }
 
-.age-warning {
-  font-size: 13px;
-  color: #ffb4a2;
-  text-align: center;
-  margin-top: -4px;
-}
+/*
+ * 체크하지 않으면 시작 버튼이 꺼져 있어 무엇을 해야 하는지 보인다.
+ * 그래서 별도 경고 문구는 두지 않는다.
+ */

@@ -49,16 +49,14 @@ export function IntroScreen({
   requireAgeCheck = false,
 }: IntroScreenProps) {
   const [ageChecked, setAgeChecked] = useState(false);
-  const [showAgeWarning, setShowAgeWarning] = useState(false);
 
-  const handleStart = () => {
-    if (requireAgeCheck && !ageChecked) {
-      // 체크하지 않으면 진행하지 않고 이유를 알린다
-      setShowAgeWarning(true);
-      return;
-    }
-    onStart();
-  };
+  /*
+   * 나이 확인 전에는 버튼을 잠근다.
+   *
+   * 눌러본 뒤에 안 된다고 알리는 것보다, 눌리지 않는 상태를 먼저 보여주는 편이
+   * 무엇을 해야 하는지 분명하다.
+   */
+  const blockedByAge = requireAgeCheck && !ageChecked;
 
   return (
     <section className="screen" data-active={active}>
@@ -96,31 +94,21 @@ export function IntroScreen({
       <div className="bottom">
         {/* 만 14세 이상 확인 (기획 결정) */}
         {requireAgeCheck && (
-          <>
-            <label className="age-check">
-              <input
-                type="checkbox"
-                checked={ageChecked}
-                onChange={(e) => {
-                  setAgeChecked(e.target.checked);
-                  if (e.target.checked) setShowAgeWarning(false);
-                }}
-              />
-              <span>{INTRO.ageCheckLabel}</span>
-            </label>
-            {showAgeWarning && (
-              <p className="age-warning" role="alert">
-                {INTRO.ageCheckRequired}
-              </p>
-            )}
-          </>
+          <label className="age-check">
+            <input
+              type="checkbox"
+              checked={ageChecked}
+              onChange={(e) => setAgeChecked(e.target.checked)}
+            />
+            <span>{INTRO.ageCheckLabel}</span>
+          </label>
         )}
 
         <button
           type="button"
           className={signedIn ? "btn" : "btn btn-kakao"}
-          onClick={handleStart}
-          disabled={busy}
+          onClick={onStart}
+          disabled={busy || blockedByAge}
         >
           {busy
             ? COMMON.loading

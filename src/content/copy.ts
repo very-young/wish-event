@@ -12,9 +12,11 @@ export const INTRO = {
   startButton: "카카오로 시작하기",
   startButtonSignedIn: "소원 빌러 가기",
   periodLabel: "이벤트 기간",
-  /** 만 14세 미만은 참여할 수 없다 (기획 결정) */
+  /*
+   * 만 14세 미만은 참여할 수 없다 (기획 결정).
+   * 체크하지 않으면 시작 버튼이 꺼져 있으므로 경고 문구는 따로 두지 않는다.
+   */
   ageCheckLabel: "만 14세 이상입니다",
-  ageCheckRequired: "만 14세 이상만 참여할 수 있어요.",
 } as const;
 
 /** 참여가 차단된 상황별 안내 (요구사항 1.4, 1.5, 13.4, 13.7) */
