@@ -1279,9 +1279,9 @@ body {
 /*
  * 결과 화면이 조작 막대에 가리지 않도록 아래 여백을 준다.
  * 편지 화면은 스크롤되므로 마지막 버튼이 막대 뒤로 숨을 수 있다.
+ * (미리보기 페이지용. 테스트 페이지는 .test-mode 규칙에서 처리한다)
  */
-.preview-bar ~ .screen.scrollable,
-.stage:has(.preview-bar) .screen.scrollable {
+.preview-bar ~ .screen.scrollable {
   padding-bottom: 130px;
 }
 
@@ -1481,3 +1481,25 @@ body {
  * 체크하지 않으면 시작 버튼이 꺼져 있어 무엇을 해야 하는지 보인다.
  * 그래서 별도 경고 문구는 두지 않는다.
  */
+
+/*
+ * 테스트 페이지에서 조작 막대가 게임 문구를 가리는 문제를 막는다.
+ *
+ * 게임 문구는 화면 아래에서 34px 위에 있는데, 조작 막대 높이가 그보다
+ * 커서 완전히 덮였다. 실제 참여 화면에는 막대가 없어 문제가 없다.
+ *
+ * 테스트 페이지는 stage에 test-mode를 붙여 구분한다.
+ * :has() 대신 클래스를 쓰는 이유는 구형 브라우저에서도 확실히 동작하기 때문이다.
+ */
+.stage.test-mode .game-message {
+  bottom: 130px;
+}
+
+.stage.test-mode .game-aim-hint {
+  bottom: 176px;
+}
+
+/* 편지 화면도 막대에 가리지 않게 아래 여백을 준다 */
+.stage.test-mode .screen.scrollable {
+  padding-bottom: 130px;
+}

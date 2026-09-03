@@ -58,7 +58,8 @@ export function PreviewFlow() {
   };
 
   return (
-    <main className="stage">
+    // test-mode: 하단 조작 막대에 화면이 가리지 않게 여백을 준다
+    <main className="stage test-mode">
       <StarField />
 
       {step === "celebrate" && won && (

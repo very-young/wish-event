@@ -181,7 +181,8 @@ export function TestFlow() {
   };
 
   return (
-    <main className="stage">
+    // test-mode: 하단 조작 막대에 게임 문구가 가리지 않게 여백을 준다
+    <main className="stage test-mode">
       <StarField />
 
       <IntroScreen
