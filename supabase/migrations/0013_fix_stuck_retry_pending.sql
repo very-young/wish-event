@@ -1,78 +1,37 @@
--- 공유 관련 두 가지 문제 수정
+-- 공유 대기 상태에 갇히는 문제 수정
 --
 -- ============================================================
--- 문제 1 (심각): 정당한 공유가 무효가 된다
+-- 문제
 -- ============================================================
 --
--- expire_share_wait가 유효한 티켓까지 만료시켰다. 그래서 이런 일이 생긴다.
+-- 공유 버튼을 눌러 티켓을 받은 뒤, 카카오톡으로 보내지 않고
+-- 브라우저를 강제로 닫으면 참여 상태가 retry_pending에 남는다.
+-- 서버에 대기 종료를 알릴 틈이 없기 때문이다.
 --
---   1) 공유 버튼 → 티켓 발급 (5분 유효)
---   2) 카카오톡에서 친구를 고르는 중
---   3) 대기 화면이 60초 지나 시간 초과 → 티켓을 만료시킴
---   4) 참여자가 전송 완료
---   5) 카카오 웹훅 도착 → 티켓이 만료돼 거부
---   6) 참여자는 공유했는데 재도전이 열리지 않는다
+-- 그 뒤로는 공유 버튼을 눌러도 "지금은 재도전 공유를 할 수 없어요"만
+-- 뜬다. issue_share_ticket이 exhausted 상태에서만 티켓을 주기 때문이다.
+-- 날짜가 넘어가면 저절로 풀리지만, 그날 하루는 재도전을 할 수 없다.
 --
--- 60초 안에 친구를 골라 보내지 못하면 무효가 됐다. 흔한 상황이다.
---
--- 수정: 아직 유효한 티켓은 건드리지 않는다. 화면 대기가 끝나도
---       티켓은 살려두어 늦게 도착한 전송도 인정한다.
+-- (그만두기 버튼을 누른 경우는 서버에 알려주므로 문제가 없다.)
 --
 -- ============================================================
--- 문제 2: 공유 대기 상태에 갇힌다
+-- 수정
 -- ============================================================
 --
--- 티켓을 받은 뒤 전송하지 않고 이탈하면 retry_pending에 머물러
--- "지금은 재도전 공유를 할 수 없어요"만 나오고 다시 공유할 수 없었다.
+-- 티켓 발급 조건에 retry_pending을 더한다.
 --
--- 수정: 티켓을 발급할 때 만료된 대기를 먼저 정리한다.
-
--- ============================================================
--- 1) 대기 종료 시 유효한 티켓을 보존한다
--- ============================================================
-
-create or replace function expire_share_wait(p_participant uuid)
-returns void
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  /*
-   * 이미 만료 시각이 지난 티켓만 정리한다.
-   *
-   * ⚠️ 유효한 티켓을 만료시키면 참여자가 전송을 완료해도 재도전이
-   *    열리지 않는다. 화면 대기(60초)보다 티켓 유효 시간(5분)이 길어
-   *    그 사이에 전송을 마치는 경우가 많다.
-   */
-  update share_tickets
-     set status = 'expired'::ticket_status
-   where participant_id = p_participant
-     and status = 'pending'::ticket_status
-     and expires_at < now();
-
-  /*
-   * 상태도 유효한 티켓이 없을 때만 되돌린다.
-   *
-   * 유효한 티켓이 남아 있다면 아직 전송을 기다리는 중이다.
-   * retry_pending을 유지해야 웹훅이 도착했을 때 정상 처리된다.
-   */
-  update participants
-     set state = 'exhausted'::play_state
-   where id = p_participant
-     and state = 'retry_pending'::play_state
-     and not exists (
-       select 1 from share_tickets t
-       where t.participant_id = p_participant
-         and t.status = 'pending'::ticket_status
-         and t.expires_at >= now()
-     );
-end;
-$$;
-
--- ============================================================
--- 2) 티켓 발급 시 만료된 대기를 정리한다
--- ============================================================
+--   변경 전: and state = 'exhausted'
+--   변경 후: and state in ('exhausted', 'retry_pending')
+--
+-- 대기 중이어도 공유 버튼을 다시 누르면 새 티켓이 나온다.
+-- 새 티켓 번호가 카카오톡 메시지에 실려 나가므로, 전송이 확인되면
+-- 그 새 티켓으로 재도전이 열린다. 옛 티켓은 무관해진다.
+--
+-- 중복 당첨 위험은 없다. 재도전이 열리는 조건은 여전히
+-- "아직 보내지 않은 톡방"이라, 티켓을 여러 번 받아도 같은 톡방으로는
+-- 열리지 않는다 (grant_retry_from_webhook의 used_chatrooms 판정).
+--
+-- expire_share_wait는 손대지 않는다. 원래 동작 그대로다.
 
 create or replace function issue_share_ticket(
   p_participant uuid,
@@ -87,37 +46,13 @@ as $$
 declare
   v_ticket uuid;
 begin
-  -- 만료된 티켓 정리
-  update share_tickets
-     set status = 'expired'::ticket_status
-   where participant_id = p_participant
-     and status = 'pending'::ticket_status
-     and expires_at < now();
-
-  /*
-   * 유효한 티켓이 하나도 없는데 retry_pending에 머물러 있다면
-   * 전송하지 않고 이탈한 것이다. 다시 공유할 수 있게 되돌린다.
-   *
-   * 진행 중인 공유는 건드리지 않는다.
-   */
-  update participants
-     set state = 'exhausted'::play_state
-   where id = p_participant
-     and has_won = false
-     and state = 'retry_pending'::play_state
-     and not exists (
-       select 1 from share_tickets t
-       where t.participant_id = p_participant
-         and t.status = 'pending'::ticket_status
-         and t.expires_at >= now()
-     );
-
-  -- 원래 조건대로 발급
   update participants
      set state = 'retry_pending'::play_state
    where id = p_participant
      and has_won = false
-     and state = 'exhausted'::play_state;
+     -- retry_pending을 더한 것이 이 수정의 전부다.
+     -- 대기에 갇혀 있어도 다시 공유할 수 있게 한다.
+     and state in ('exhausted'::play_state, 'retry_pending'::play_state);
 
   if not found then
     return null;
@@ -134,26 +69,6 @@ begin
   return v_ticket;
 end;
 $$;
-
--- ============================================================
--- 3) 지금 갇혀 있는 참여자를 풀어준다
--- ============================================================
-
-update share_tickets
-   set status = 'expired'::ticket_status
- where status = 'pending'::ticket_status
-   and expires_at < now();
-
-update participants p
-   set state = 'exhausted'::play_state
- where p.has_won = false
-   and p.state = 'retry_pending'::play_state
-   and not exists (
-     select 1 from share_tickets t
-     where t.participant_id = p.id
-       and t.status = 'pending'::ticket_status
-       and t.expires_at >= now()
-   );
 
 -- 확인
 select nickname, state, has_won from participants order by state_date desc;
