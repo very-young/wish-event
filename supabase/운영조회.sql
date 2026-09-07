@@ -149,6 +149,41 @@ limit 20;
 
 
 -- ============================================================
+-- 7-2. 사람별 공유 현황
+-- ============================================================
+--
+-- 공유하기를 몇 번 눌렀고, 그중 몇 번이 실제 전송으로 이어졌는지 봅니다.
+-- 시도는 많은데 성공이 적으면 공유 과정에서 이탈하고 있다는 뜻입니다.
+--
+-- ⚠️ 누구에게 보냈는지는 알 수 없습니다. 카카오가 톡방을 알아볼 수 없는
+--    문자열로 바꿔서 주기 때문입니다. "같은 방에 또 보냈나"만 판별합니다.
+
+select p.nickname as 닉네임,
+       (select count(*) from share_tickets t
+         where t.participant_id = p.id)      as 공유시도,
+       (select count(*) from share_grants g
+         where g.participant_id = p.id)      as 전송성공,
+       (select count(*) from used_chatrooms u
+         where u.participant_id = p.id)      as 보낸톡방수
+from participants p
+order by 2 desc, p.nickname;
+
+-- 전체 합계. 공유 시도 중 몇 %가 실제 전송까지 갔는지 봅니다.
+select (select count(*) from share_tickets)  as 총공유시도,
+       (select count(*) from share_grants)   as 총전송성공,
+       round(100.0 * (select count(*) from share_grants)
+                   / greatest((select count(*) from share_tickets), 1), 1)
+                                             as 성공률퍼센트;
+
+-- 단체방과 1:1 중 어디로 많이 보내는지
+--   DirectChat = 1:1 대화, MultiChat = 단체방, Memo = 나와의 채팅
+select chat_type as 톡방종류, count(*) as 건수
+from used_chatrooms
+group by chat_type
+order by count(*) desc;
+
+
+-- ============================================================
 -- 8. 소원 내용 살펴보기
 -- ============================================================
 
