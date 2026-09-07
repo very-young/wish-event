@@ -16,7 +16,7 @@ for (const raw of readFileSync(".env.local", "utf8").split(/\r?\n/)) {
   env[line.slice(0, eq).trim()] = line.slice(eq + 1).trim();
 }
 
-const SITE = "https://wish-event-flax.vercel.app";
+const SITE = "https://wish-event.app";
 const SUPABASE = env.NEXT_PUBLIC_SUPABASE_URL;
 const ADMIN_KEY = env.KAKAO_ADMIN_KEY;
 

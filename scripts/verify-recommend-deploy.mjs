@@ -6,7 +6,7 @@
  * 500이 오면 데이터 파일을 못 찾았거나 적재에 실패한 것이다.
  */
 
-const SITE = process.argv[2] || "https://wish-event-flax.vercel.app";
+const SITE = process.argv[2] || "https://wish-event.app";
 
 console.log(`\n대상: ${SITE}`);
 

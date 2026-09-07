@@ -28,7 +28,7 @@ const cases = [
 for (const c of cases) {
   const url = new URL(`${base}/auth/v1/authorize`);
   url.searchParams.set("provider", "kakao");
-  url.searchParams.set("redirect_to", "https://wish-event-flax.vercel.app/auth/callback");
+  url.searchParams.set("redirect_to", "https://wish-event.app/auth/callback");
   if (c.scopes) url.searchParams.set("scopes", c.scopes);
 
   try {

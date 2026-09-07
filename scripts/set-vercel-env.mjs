@@ -32,7 +32,7 @@ for (const raw of readFileSync(".env.local", "utf8").split(/\r?\n/)) {
 }
 
 /** 배포 환경에서 사용할 사이트 주소 */
-const SITE_URL = "https://wish-event-flax.vercel.app";
+const SITE_URL = "https://wish-event.app";
 
 const targets = [
   "NEXT_PUBLIC_SUPABASE_URL",
