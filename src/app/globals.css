@@ -1226,12 +1226,10 @@ body {
   animation-delay: 0.3s;
 }
 
-.share-wait-timer {
-  margin-top: 16px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 15px;
-  color: var(--gold);
-}
+/*
+ * 남은 시간 표시는 없앴다 (기획 결정).
+ * 줄어드는 숫자가 친구를 고르는 동안 압박을 줬다.
+ */
 
 /* ---------- 결과 화면 미리보기 (개발·검수용) ---------- */
 

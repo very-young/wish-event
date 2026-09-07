@@ -10,7 +10,7 @@
  * 연결 실패 걱정 없이 확실하게 동작하기 때문이다.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { expireShareWait, getPlayState } from "@/app/actions";
 import { RETRY_SHARE } from "@/content/copy";
 import {
@@ -29,9 +29,6 @@ export function ShareWaitOverlay({
   onGranted,
   onCancel,
 }: ShareWaitOverlayProps) {
-  const [secondsLeft, setSecondsLeft] = useState(
-    Math.floor(SHARE_WAIT_TIMEOUT_MS / 1000),
-  );
   // 콜백이 두 번 불리지 않게 막는다
   const settledRef = useRef(false);
 
@@ -43,7 +40,6 @@ export function ShareWaitOverlay({
       if (settledRef.current) return;
       settledRef.current = true;
       window.clearTimeout(pollTimer);
-      window.clearInterval(tickTimer);
       fn();
     };
 
@@ -76,15 +72,10 @@ export function ShareWaitOverlay({
       pollTimer = window.setTimeout(poll, SHARE_POLL_INTERVAL_MS);
     };
 
-    const tickTimer = window.setInterval(() => {
-      setSecondsLeft(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)));
-    }, 1000);
-
     pollTimer = window.setTimeout(poll, SHARE_POLL_INTERVAL_MS);
 
     return () => {
       window.clearTimeout(pollTimer);
-      window.clearInterval(tickTimer);
     };
   }, [onGranted, onCancel]);
 
@@ -100,6 +91,13 @@ export function ShareWaitOverlay({
    * 정리하므로 저절로 풀린다 (0013 마이그레이션).
    */
 
+  /*
+   * 그만두기.
+   *
+   * 서버에 대기 종료를 알리지만, 유효한 티켓은 서버가 보존한다
+   * (0013 마이그레이션). 그만두기를 눌렀더라도 이미 카카오톡에서
+   * 전송을 마쳤다면 그 공유는 인정된다.
+   */
   const handleClose = () => {
     if (settledRef.current) return;
     settledRef.current = true;
@@ -132,9 +130,12 @@ export function ShareWaitOverlay({
           {RETRY_SHARE.waitingSub}
         </p>
 
-        <p className="share-wait-timer" aria-live="off">
-          {secondsLeft}초
-        </p>
+        {/*
+          남은 시간을 숫자로 보여주지 않는다.
+          줄어드는 숫자는 "이 안에 끝내야 한다"는 압박을 줘서
+          친구를 고르는 동안 조급하게 만든다.
+          위의 점 세 개 애니메이션이 기다리는 중임을 알려준다.
+        */}
 
         <button
           type="button"
