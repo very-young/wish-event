@@ -82,6 +82,27 @@ export function ShareWaitOverlay({
     };
   }, [onGranted, onCancel]);
 
+  /*
+   * 대기 중에 페이지를 벗어나면 서버에 알려 상태를 되돌린다.
+   *
+   * 이 처리가 없으면 참여자가 공유창을 닫고 앱을 나갔을 때
+   * 상태가 "공유 대기"에 머물러, 다음에 들어와도
+   * "지금은 재도전 공유를 할 수 없어요"만 보게 된다.
+   *
+   * sendBeacon을 쓰지 않고 서버 액션을 부르는 이유는, 페이지가 완전히
+   * 닫히는 경우가 아니라 뒤로 가기·탭 전환이 더 흔하기 때문이다.
+   * 완전히 닫혀 실패해도 DB가 만료 티켓을 정리하므로 복구된다.
+   */
+  useEffect(() => {
+    const handleLeave = () => {
+      if (settledRef.current) return;
+      void expireShareWait();
+    };
+
+    window.addEventListener("pagehide", handleLeave);
+    return () => window.removeEventListener("pagehide", handleLeave);
+  }, []);
+
   const handleClose = () => {
     if (settledRef.current) return;
     settledRef.current = true;
