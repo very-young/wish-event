@@ -126,7 +126,7 @@ export const CATEGORIES: readonly Category[] = [
   {
     id: "wealth",
     label: "재물·자산",
-    emoji: "🪙",
+    emoji: "💰",
     eyebrow: "풍요를 비는 밤",
     paperTag: "재물 소원",
     places: [
