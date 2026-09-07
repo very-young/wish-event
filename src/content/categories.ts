@@ -133,7 +133,7 @@ export const CATEGORIES: readonly Category[] = [
       {
         name: "금정산 복샘",
         description: "물 한 모금에 복이 깃든다는 오래된 약수터.",
-        emoji: "🪙",
+        emoji: "💰",
       },
       {
         name: "재물사 돌탑",
