@@ -61,7 +61,13 @@ export function ShareWaitOverlay({
       }
 
       if (Date.now() >= deadline) {
-        // 시간 초과: 상태를 되돌려 다시 공유할 수 있게 한다
+        /*
+         * 화면 대기 시간이 끝났다. 티켓은 아직 유효할 수 있다.
+         *
+         * 서버는 만료된 티켓만 정리하므로, 참여자가 지금 카카오톡에서
+         * 전송을 마치면 그 공유는 여전히 인정된다.
+         * 그래서 "실패"가 아니라 "확인이 늦어진다"로 안내한다.
+         */
         void expireShareWait();
         settle(() => onCancel("timeout"));
         return;
@@ -83,25 +89,16 @@ export function ShareWaitOverlay({
   }, [onGranted, onCancel]);
 
   /*
-   * 대기 중에 페이지를 벗어나면 서버에 알려 상태를 되돌린다.
+   * ⚠️ 페이지를 벗어날 때 티켓을 만료시키지 않는다.
    *
-   * 이 처리가 없으면 참여자가 공유창을 닫고 앱을 나갔을 때
-   * 상태가 "공유 대기"에 머물러, 다음에 들어와도
-   * "지금은 재도전 공유를 할 수 없어요"만 보게 된다.
+   * 공유 버튼을 누르면 카카오톡 앱이 열리면서 브라우저가 뒤로 밀려난다.
+   * 그때 pagehide가 발생하는데, 여기서 티켓을 만료시키면
+   * **참여자가 친구에게 전송을 완료해도 재도전이 열리지 않는다.**
+   * 정당한 공유가 무효가 되는 것이 갇혀서 잠시 못 하는 것보다 나쁘다.
    *
-   * sendBeacon을 쓰지 않고 서버 액션을 부르는 이유는, 페이지가 완전히
-   * 닫히는 경우가 아니라 뒤로 가기·탭 전환이 더 흔하기 때문이다.
-   * 완전히 닫혀 실패해도 DB가 만료 티켓을 정리하므로 복구된다.
+   * 갇히는 문제는 서버가 해결한다. 다음 공유 시도에서 만료된 티켓을
+   * 정리하므로 저절로 풀린다 (0013 마이그레이션).
    */
-  useEffect(() => {
-    const handleLeave = () => {
-      if (settledRef.current) return;
-      void expireShareWait();
-    };
-
-    window.addEventListener("pagehide", handleLeave);
-    return () => window.removeEventListener("pagehide", handleLeave);
-  }, []);
 
   const handleClose = () => {
     if (settledRef.current) return;
