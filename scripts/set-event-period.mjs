@@ -5,9 +5,13 @@
  * (src/content/settings.ts)와 반드시 같아야 한다.
  *
  * 사용법:
- *   node scripts/set-event-period.mjs            현재 설정 확인
- *   node scripts/set-event-period.mjs --apply    settings.ts 값으로 맞추기
- *   node scripts/set-event-period.mjs --test     테스트용으로 넓게 열기
+ *   node scripts/set-event-period.mjs             현재 설정 확인
+ *   node scripts/set-event-period.mjs --apply     settings.ts 값으로 맞추기
+ *   node scripts/set-event-period.mjs --test      테스트용으로 넓게 열기
+ *   node scripts/set-event-period.mjs --end-only  종료일만 맞추기
+ *
+ * --end-only는 오픈 전에 쓴다. 종료일은 실제 값으로 두면서 시작일은
+ * 넓게 열어두어, 오픈 전에도 테스트할 수 있게 한다.
  */
 
 import { readFileSync } from "node:fs";
@@ -64,6 +68,31 @@ if (mode === "--apply") {
   }
   await show("변경 후");
   console.log("\n화면 문구와 DB가 일치합니다.\n");
+} else if (mode === "--end-only") {
+  /*
+   * 종료일만 실제 값으로 맞춘다. 시작일은 건드리지 않는다.
+   *
+   * 오픈 전에 쓰는 설정이다. 종료일을 미리 정확히 넣어두면 이벤트가
+   * 끝난 뒤 참여가 자동으로 닫힌다. 시작일은 넓게 열려 있어 지금도
+   * 테스트할 수 있다.
+   *
+   * ⚠️ 오픈 시점에는 --apply로 시작일까지 맞춰야 한다. 그때까지는
+   *    기간 밖에서도 참여가 가능한 상태다.
+   */
+  console.log("\n[종료일만 적용]");
+  const { error } = await admin
+    .from("event_config")
+    .update({ end_date: uiEnd })
+    .eq("id", "main");
+  if (error) {
+    console.log("  실패:", error.message);
+    process.exit(1);
+  }
+  const after = await show("변경 후");
+  console.log(`\n종료일: ${after?.end_date} (화면 문구와 일치)`);
+  console.log(
+    `시작일: ${after?.start_date} (테스트용으로 열려 있음 — 오픈 시 --apply 필요)\n`,
+  );
 } else if (mode === "--test") {
   console.log("\n[테스트용으로 넓게 열기]");
   const { error } = await admin
